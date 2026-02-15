@@ -1,39 +1,11 @@
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { Colors } from '../constants/Colors';
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { Session } from '@supabase/supabase-js';
 
 export default function Welcome() {
     const router = useRouter();
-    const [session, setSession] = useState<Session | null>(null);
 
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            if (session) checkProfileAndRedirect(session);
-        });
-
-        supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-            if (session) checkProfileAndRedirect(session);
-        });
-    }, []);
-
-    async function checkProfileAndRedirect(session: Session) {
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('preferences')
-            .eq('id', session.user.id)
-            .single();
-
-        if (profile?.preferences && Object.keys(profile.preferences).length > 0) {
-            router.replace('/(tabs)');
-        } else {
-            router.replace('/onboarding/preferences');
-        }
-    }
+    // Navigation is handled by RootLayout now
 
     return (
         <View style={styles.container}>
