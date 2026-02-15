@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 
@@ -240,10 +239,8 @@ export default function PreferencesScreen() {
                 <Text style={styles.stepIndicator}>{currentStep + 1}/{STEPS.length}</Text>
             </View>
 
-            <Animated.View
+            <View
                 key={currentStep}
-                entering={FadeInRight}
-                exiting={FadeOutLeft}
                 style={styles.content}
             >
                 <View style={styles.titleContainer}>
@@ -257,7 +254,7 @@ export default function PreferencesScreen() {
                 </View>
 
                 {stepData.type === 'form' ? renderFormStep() : renderSelectionStep()}
-            </Animated.View>
+            </View>
 
             <View style={styles.footer}>
                 <Pressable style={styles.nextButton} onPress={handleNext} disabled={loading}>
