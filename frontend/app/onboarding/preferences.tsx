@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import { authenticatedFetch } from '../../lib/api';
 
 const { width } = Dimensions.get('window');
 
@@ -138,16 +139,17 @@ export default function PreferencesScreen() {
                 preferences: preferences
             };
 
-            const { error } = await supabase
-                .from('profiles')
-                .update(updatePayload)
-                .eq('id', user.id);
 
-            setLoading(false);
-            if (error) {
-                Alert.alert("Error saving profile", error.message);
-            } else {
+            try {
+                await authenticatedFetch('/profiles/me', {
+                    method: 'PUT',
+                    body: JSON.stringify(updatePayload)
+                });
+                setLoading(false);
                 router.replace('/(tabs)');
+            } catch (error: any) {
+                setLoading(false);
+                Alert.alert("Error saving profile", error.message);
             }
         }
     };
