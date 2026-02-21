@@ -6,12 +6,14 @@ import {
     ActivityIndicator,
     ScrollView,
     TouchableOpacity,
+    Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { authenticatedFetch } from '../../lib/api';
 
 const ICONS = {
@@ -26,6 +28,7 @@ const ICONS = {
 export default function ProfileScreen() {
     const router = useRouter();
     const [profile, setProfile] = useState<any>(null);
+    const [myItems, setMyItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useFocusEffect(
@@ -36,8 +39,12 @@ export default function ProfileScreen() {
 
     async function loadProfile() {
         try {
-            const data = await authenticatedFetch('/profiles/me');
-            setProfile(data);
+            const [profileData, itemsData] = await Promise.all([
+                authenticatedFetch('/profiles/me'),
+                authenticatedFetch('/items/my'),
+            ]);
+            setProfile(profileData);
+            setMyItems(itemsData || []);
         } catch (error) {
             console.log('Error loading profile:', error);
         } finally {
@@ -67,8 +74,6 @@ export default function ProfileScreen() {
         { label: 'Items Listed', value: profile?.items_listed ?? 0 },
         { label: 'Wishlist', value: profile?.wishlist_count ?? 0 },
     ];
-
-    const wardrobeItems = [0, 1, 2];
 
     const menuItems = [
         { icon: ICONS.swapHistory, label: 'Swap History' },
@@ -104,11 +109,21 @@ export default function ProfileScreen() {
                         <Text style={styles.location}>
                             {profile?.location || 'Location not set'}
                         </Text>
-                        <View style={styles.ratingBadge}>
-                            <Text style={styles.starIcon}>{ICONS.star}</Text>
-                            <Text style={styles.ratingText}>
-                                {profile?.rating ? Number(profile.rating).toFixed(1) : '4.8'}
-                            </Text>
+                        <View style={styles.headerActions}>
+                            <View style={styles.ratingBadge}>
+                                <Text style={styles.starIcon}>{ICONS.star}</Text>
+                                <Text style={styles.ratingText}>
+                                    {profile?.rating ? Number(profile.rating).toFixed(1) : '4.8'}
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.editProfileBtn}
+                                onPress={() => router.push('/edit-profile')}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="pencil-outline" size={13} color={Colors.secondary.deepMaroon} />
+                                <Text style={styles.editProfileText}>Edit</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
                 </View>
@@ -130,16 +145,56 @@ export default function ProfileScreen() {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Wardrobe</Text>
-                        <TouchableOpacity style={styles.addItemButton} activeOpacity={0.7}>
-                            <Text style={styles.addItemText}>+ Add Item</Text>
+                        <TouchableOpacity
+                            style={styles.addItemButton}
+                            activeOpacity={0.7}
+                            onPress={() => router.push('/(tabs)/upload')}
+                        >
+                            <Ionicons name="add" size={14} color={Colors.primary.forestGreen} />
+                            <Text style={styles.addItemText}>Add Item</Text>
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.wardrobeGrid}>
-                        {wardrobeItems.map((idx) => (
-                            <View key={idx} style={styles.wardrobeCard} />
-                        ))}
-                    </View>
+                    {myItems.length === 0 ? (
+                        /* Empty state */
+                        <Pressable style={styles.emptyWardrobe} onPress={() => router.push('/(tabs)/upload')}>
+                            <Ionicons name="shirt-outline" size={32} color="#BBBBBB" />
+                            <Text style={styles.emptyWardrobeText}>No items yet</Text>
+                            <Text style={styles.emptyWardrobeSub}>Tap to add your first item</Text>
+                        </Pressable>
+                    ) : (
+                        <View style={styles.wardrobeGrid}>
+                            {myItems.map((item) => (
+                                <Pressable
+                                    key={item.id}
+                                    style={styles.wardrobeCard}
+                                    onPress={() => router.push(`/item/${item.id}`)}
+                                >
+                                    {item.images?.[0] ? (
+                                        <Image
+                                            source={{ uri: item.images[0] }}
+                                            style={{ width: '100%', height: '100%', borderRadius: 10 }}
+                                            resizeMode="cover"
+                                        />
+                                    ) : (
+                                        <View style={styles.wardrobeCardPlaceholder}>
+                                            <Ionicons name="shirt-outline" size={24} color="#BBB" />
+                                        </View>
+                                    )}
+                                    {item.status === 'pending_review' && (
+                                        <View style={styles.pendingBadge}>
+                                            <Text style={styles.pendingBadgeText}>⏳ Review</Text>
+                                        </View>
+                                    )}
+                                    <View style={styles.wardrobeCardOverlay}>
+                                        <Text style={styles.wardrobeCardTitle} numberOfLines={1}>
+                                            {item.title}
+                                        </Text>
+                                    </View>
+                                </Pressable>
+                            ))}
+                        </View>
+                    )}
                 </View>
 
                 {/* ── Menu Items ── */}
@@ -304,26 +359,106 @@ const styles = StyleSheet.create({
         color: Colors.neutrals.black,
     },
     addItemButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
         borderWidth: 1,
-        borderColor: '#CCCCCC',
+        borderColor: Colors.primary.forestGreen,
         borderRadius: 8,
-        paddingHorizontal: 12,
+        paddingHorizontal: 10,
         paddingVertical: 6,
     },
     addItemText: {
         fontSize: 13,
-        color: '#444',
-        fontWeight: '500',
+        color: Colors.primary.forestGreen,
+        fontWeight: '600',
+    },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 4,
+    },
+    editProfileBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        borderWidth: 1,
+        borderColor: Colors.secondary.deepMaroon,
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+    },
+    editProfileText: {
+        fontSize: 12,
+        color: Colors.secondary.deepMaroon,
+        fontWeight: '600',
     },
     wardrobeGrid: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: 10,
     },
     wardrobeCard: {
-        flex: 1,
-        height: 110,
+        width: '30%',
+        aspectRatio: 1,
         backgroundColor: Colors.neutrals.betterBeige,
         borderRadius: 10,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    wardrobeCardPlaceholder: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    wardrobeCardOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        paddingHorizontal: 6,
+        paddingVertical: 4,
+    },
+    wardrobeCardTitle: {
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: '600',
+    },
+    pendingBadge: {
+        position: 'absolute',
+        top: 5,
+        right: 5,
+        backgroundColor: 'rgba(180,120,0,0.85)',
+        borderRadius: 8,
+        paddingHorizontal: 5,
+        paddingVertical: 2,
+    },
+    pendingBadgeText: {
+        color: '#fff',
+        fontSize: 9,
+        fontWeight: '700',
+    },
+    emptyWardrobe: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 32,
+        borderRadius: 12,
+        backgroundColor: Colors.neutrals.betterBeige,
+        borderWidth: 1.5,
+        borderColor: '#E0DDD8',
+        borderStyle: 'dashed',
+        gap: 6,
+    },
+    emptyWardrobeText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#999',
+    },
+    emptyWardrobeSub: {
+        fontSize: 12,
+        color: '#BBB',
     },
 
     // ── Menu ─────────────────────────────────────────────

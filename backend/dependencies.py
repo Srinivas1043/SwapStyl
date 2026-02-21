@@ -29,6 +29,18 @@ async def get_current_user(token: str = Depends(get_token), supabase: Client = D
         raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
 
 def get_authenticated_client(token: str = Depends(get_token)) -> Client:
+    import httpx
     client = create_client(url, key)
-    client.postgrest.auth(token)
+    # Build a fresh httpx session with the JWT baked into default headers.
+    # This is the only reliable way to make auth.uid() work in Supabase RLS
+    # with supabase-py v2 (postgrest.auth() alone doesn't stick on all versions).
+    authed_session = httpx.Client(
+        headers={
+            "Authorization": f"Bearer {token}",
+            "apikey": key,
+        },
+        timeout=10,
+    )
+    client.postgrest.session = authed_session
     return client
+

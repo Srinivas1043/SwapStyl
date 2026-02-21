@@ -14,6 +14,8 @@ class ProfileUpdate(BaseModel):
     phone: Optional[str] = None
     gender: Optional[str] = None
     avatar_url: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     preferences: Optional[Dict[str, Any]] = None
     onboarding_completed_at: Optional[str] = None   # ISO-8601 string
 
