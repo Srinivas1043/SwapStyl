@@ -98,8 +98,11 @@ export default function ProfileScreen() {
                         <Text style={styles.name}>
                             {profile?.full_name || 'Your Name'}
                         </Text>
+                        {profile?.username ? (
+                            <Text style={styles.username}>@{profile.username}</Text>
+                        ) : null}
                         <Text style={styles.location}>
-                            {profile?.location || 'Your Location'}
+                            {profile?.location || 'Location not set'}
                         </Text>
                         <View style={styles.ratingBadge}>
                             <Text style={styles.starIcon}>{ICONS.star}</Text>
@@ -225,6 +228,12 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#666',
         marginBottom: 8,
+    },
+    username: {
+        fontSize: 12,
+        color: Colors.primary.forestGreen,
+        marginBottom: 2,
+        fontWeight: '500',
     },
     ratingBadge: {
         flexDirection: 'row',

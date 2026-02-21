@@ -1,12 +1,23 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Alert, TextInput, KeyboardAvoidingView, Platform, Dimensions } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Pressable,
+    ScrollView,
+    Alert,
+    TextInput,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableOpacity,
+    ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { authenticatedFetch } from '../../lib/api';
-
-const { width } = Dimensions.get('window');
+import * as Location from 'expo-location';
 
 const STEPS = [
     {
@@ -16,10 +27,11 @@ const STEPS = [
         type: 'form',
         icon: 'person-circle-outline',
         fields: [
-            { label: 'Full Name', key: 'full_name', placeholder: 'e.g. Jane Doe', icon: 'person-outline' },
+            { label: 'Full Name *', key: 'full_name', placeholder: 'e.g. Jane Doe', icon: 'person-outline' },
             { label: 'Username', key: 'username', placeholder: 'e.g. janedoe123', icon: 'at-outline' },
             { label: 'Bio', key: 'bio', placeholder: 'Tell us a bit about your style...', multiline: true, icon: 'create-outline' },
-            { label: 'Location', key: 'location', placeholder: 'e.g. New York, NY', icon: 'location-outline' },
+            { label: 'Location', key: 'location', placeholder: 'e.g. Amsterdam, Netherlands', icon: 'location-outline' },
+            { label: 'Phone (optional)', key: 'phone', placeholder: 'e.g. +1 234 567 8900', icon: 'call-outline', keyboardType: 'phone-pad' },
         ]
     },
     {
@@ -80,7 +92,7 @@ const STEPS = [
         icon: 'pricetag-outline',
         options: [
             { label: "Tops", icon: "shirt-outline" },
-            { label: "Bottoms", icon: "keypad-outline" }, // generic placeholder
+            { label: "Bottoms", icon: "keypad-outline" },
             { label: "Shoes", icon: "footsteps-outline" },
             { label: "Accessories", icon: "watch-outline" },
             { label: "Bags", icon: "briefcase-outline" },
@@ -94,6 +106,7 @@ export default function PreferencesScreen() {
     const router = useRouter();
     const [currentStep, setCurrentStep] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [locationLoading, setLocationLoading] = useState(false);
 
     const [profileData, setProfileData] = useState<any>({});
     const [preferences, setPreferences] = useState<any>({});
@@ -101,7 +114,45 @@ export default function PreferencesScreen() {
     const stepData = STEPS[currentStep];
 
     const updateProfileField = (key: string, value: string) => {
-        setProfileData({ ...profileData, [key]: value });
+        setProfileData((prev: any) => ({ ...prev, [key]: value }));
+    };
+
+    // ── Auto-detect location via GPS ────────────────────────────────────────
+    const detectLocation = async () => {
+        setLocationLoading(true);
+        try {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert(
+                    'Permission Denied',
+                    'Location permission is needed to auto-fill your city. You can still type it manually.'
+                );
+                setLocationLoading(false);
+                return;
+            }
+
+            const coords = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Balanced,
+            });
+
+            const [place] = await Location.reverseGeocodeAsync({
+                latitude: coords.coords.latitude,
+                longitude: coords.coords.longitude,
+            });
+
+            if (place) {
+                // Build a human-readable "City, Country" string
+                const parts = [place.city, place.region, place.country].filter(Boolean);
+                const locationStr = parts.join(', ');
+                updateProfileField('location', locationStr);
+            } else {
+                Alert.alert('Could not determine location', 'Please enter it manually.');
+            }
+        } catch (e: any) {
+            Alert.alert('Location Error', e.message || 'Unable to fetch location.');
+        } finally {
+            setLocationLoading(false);
+        }
     };
 
     const toggleOption = (optionLabel: string) => {
@@ -120,6 +171,11 @@ export default function PreferencesScreen() {
     };
 
     const handleNext = async () => {
+        if (currentStep === 0 && !profileData.full_name?.trim()) {
+            Alert.alert('Required', 'Please enter your full name to continue.');
+            return;
+        }
+
         if (currentStep < STEPS.length - 1) {
             setCurrentStep(currentStep + 1);
         } else {
@@ -132,13 +188,15 @@ export default function PreferencesScreen() {
             }
 
             const updatePayload = {
-                full_name: profileData.full_name,
-                username: profileData.username,
-                bio: profileData.bio,
-                location: profileData.location,
-                preferences: preferences
+                full_name: profileData.full_name?.trim() || null,
+                username: profileData.username?.trim() || null,
+                bio: profileData.bio?.trim() || null,
+                location: profileData.location?.trim() || null,
+                phone: profileData.phone?.trim() || null,
+                gender: preferences.gender || null,
+                preferences: preferences,
+                onboarding_completed_at: new Date().toISOString(),
             };
-
 
             try {
                 await authenticatedFetch('/profiles/me', {
@@ -155,9 +213,7 @@ export default function PreferencesScreen() {
     };
 
     const handleBack = () => {
-        if (currentStep > 0) {
-            setCurrentStep(currentStep - 1);
-        }
+        if (currentStep > 0) setCurrentStep(currentStep - 1);
     };
 
     const renderProgressBar = () => {
@@ -169,30 +225,68 @@ export default function PreferencesScreen() {
         );
     };
 
+    // ── Form step: scrollable, location field has GPS button ─────────────────
     const renderFormStep = () => (
-        <View style={styles.formContainer}>
-            {stepData.fields?.map((field: any) => (
-                <View key={field.key} style={styles.inputGroup}>
-                    <Text style={styles.label}>{field.label}</Text>
-                    <View style={styles.inputWrapper}>
-                        <Ionicons name={field.icon} size={20} color={Colors.neutrals.gray} style={styles.inputIcon} />
-                        <TextInput
-                            style={[styles.input, field.multiline && styles.textArea]}
-                            placeholder={field.placeholder}
-                            placeholderTextColor={Colors.neutrals.gray}
-                            value={profileData[field.key] || ''}
-                            onChangeText={(text) => updateProfileField(field.key, text)}
-                            multiline={field.multiline}
-                            numberOfLines={field.multiline ? 3 : 1}
-                        />
+        <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.formContainer}
+        >
+            {stepData.fields?.map((field: any) => {
+                const isLocation = field.key === 'location';
+                return (
+                    <View key={field.key} style={styles.inputGroup}>
+                        <Text style={styles.label}>{field.label}</Text>
+                        <View style={[styles.inputWrapper, field.multiline && styles.inputWrapperMulti]}>
+                            <Ionicons
+                                name={field.icon}
+                                size={20}
+                                color={Colors.neutrals.gray}
+                                style={styles.inputIcon}
+                            />
+                            <TextInput
+                                style={[styles.input, field.multiline && styles.textArea]}
+                                placeholder={isLocation ? 'e.g. Amsterdam, Netherlands' : field.placeholder}
+                                placeholderTextColor={Colors.neutrals.gray}
+                                value={profileData[field.key] || ''}
+                                onChangeText={(text) => updateProfileField(field.key, text)}
+                                multiline={field.multiline}
+                                numberOfLines={field.multiline ? 3 : 1}
+                                keyboardType={field.keyboardType || 'default'}
+                                autoCapitalize={field.key === 'username' ? 'none' : 'sentences'}
+                            />
+                            {/* GPS detect button only on location field */}
+                            {isLocation && (
+                                <TouchableOpacity
+                                    onPress={detectLocation}
+                                    style={styles.gpsButton}
+                                    disabled={locationLoading}
+                                >
+                                    {locationLoading
+                                        ? <ActivityIndicator size="small" color={Colors.primary.forestGreen} />
+                                        : <Ionicons name="navigate" size={20} color={Colors.primary.forestGreen} />
+                                    }
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                        {isLocation && (
+                            <Text style={styles.fieldHint}>
+                                Tap 📍 to detect automatically, or type your city manually.
+                            </Text>
+                        )}
                     </View>
-                </View>
-            ))}
-        </View>
+                );
+            })}
+            {/* Bottom padding so last field isn't hidden behind the footer */}
+            <View style={{ height: 20 }} />
+        </ScrollView>
     );
 
     const renderSelectionStep = () => (
-        <ScrollView contentContainerStyle={styles.optionsContainer} showsVerticalScrollIndicator={false}>
+        <ScrollView
+            contentContainerStyle={styles.optionsContainer}
+            showsVerticalScrollIndicator={false}
+        >
             {stepData.options?.map((option: any) => {
                 const field = stepData.field!;
                 const isSelected = stepData.multi
@@ -225,43 +319,50 @@ export default function PreferencesScreen() {
     );
 
     return (
+        // KeyboardAvoidingView wraps everything — footer stays visible above keyboard
         <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
         >
+            {/* ── Top header (back + progress + step count) ── */}
             <View style={styles.header}>
                 {currentStep > 0 ? (
                     <Pressable onPress={handleBack} style={styles.backButton}>
                         <Ionicons name="chevron-back" size={24} color={Colors.secondary.deepMaroon} />
                     </Pressable>
-                ) : <View style={{ width: 24 }} />}
+                ) : <View style={{ width: 34 }} />}
 
                 {renderProgressBar()}
 
                 <Text style={styles.stepIndicator}>{currentStep + 1}/{STEPS.length}</Text>
             </View>
 
-            <View
-                key={currentStep}
-                style={styles.content}
-            >
-                <View style={styles.titleContainer}>
-                    <View style={styles.iconCircle}>
-                        <Ionicons name={stepData.icon as any} size={32} color={Colors.primary.forestGreen} />
-                    </View>
-                    <View>
-                        <Text style={styles.title}>{stepData.title}</Text>
-                        <Text style={styles.subtitle}>{stepData.subtitle}</Text>
-                    </View>
+            {/* ── Step title ── */}
+            <View style={styles.titleContainer}>
+                <View style={styles.iconCircle}>
+                    <Ionicons name={stepData.icon as any} size={30} color={Colors.primary.forestGreen} />
                 </View>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.title}>{stepData.title}</Text>
+                    <Text style={styles.subtitle}>{stepData.subtitle}</Text>
+                </View>
+            </View>
 
+            {/* ── Scrollable content area ── */}
+            <View style={styles.content} key={currentStep}>
                 {stepData.type === 'form' ? renderFormStep() : renderSelectionStep()}
             </View>
 
+            {/* ── Fixed footer — always above keyboard ── */}
             <View style={styles.footer}>
-                <Pressable style={styles.nextButton} onPress={handleNext} disabled={loading}>
+                <Pressable
+                    style={[styles.nextButton, loading && styles.nextButtonDisabled]}
+                    onPress={handleNext}
+                    disabled={loading}
+                >
                     <Text style={styles.nextButtonText}>
-                        {loading ? "Saving..." : (currentStep === STEPS.length - 1 ? "Finish Profile" : "Continue")}
+                        {loading ? 'Saving...' : (currentStep === STEPS.length - 1 ? 'Finish Profile' : 'Continue')}
                     </Text>
                     {!loading && <Ionicons name="arrow-forward" size={20} color={Colors.neutrals.white} />}
                 </Pressable>
@@ -277,25 +378,28 @@ export default function PreferencesScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.neutrals.beige, // Changed to Beige for premium feel
+        backgroundColor: Colors.neutrals.beige,
         padding: 20,
         paddingTop: 60,
     },
+
+    // ── Header ──────────────────────────────────────────────────────────────
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 30,
+        marginBottom: 24,
         justifyContent: 'space-between',
     },
     backButton: {
         padding: 5,
+        width: 34,
     },
     progressContainer: {
         flex: 1,
         height: 6,
         backgroundColor: '#E0E0E0',
         borderRadius: 3,
-        marginHorizontal: 15,
+        marginHorizontal: 12,
         overflow: 'hidden',
     },
     progressBar: {
@@ -307,51 +411,61 @@ const styles = StyleSheet.create({
         color: Colors.neutrals.gray,
         fontSize: 12,
         fontWeight: 'bold',
+        width: 34,
+        textAlign: 'right',
     },
-    content: {
-        flex: 1,
-    },
+
+    // ── Title ───────────────────────────────────────────────────────────────
     titleContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 30,
-        paddingHorizontal: 5,
+        marginBottom: 20,
+        paddingHorizontal: 2,
     },
     iconCircle: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        width: 54,
+        height: 54,
+        borderRadius: 27,
         backgroundColor: Colors.neutrals.white,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 15,
-        shadowColor: "#000",
+        marginRight: 14,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
+        shadowOpacity: 0.08,
         shadowRadius: 4,
         elevation: 3,
+        flexShrink: 0,
     },
     title: {
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: 'bold',
         color: Colors.secondary.deepMaroon,
     },
     subtitle: {
-        fontSize: 14,
+        fontSize: 13,
         color: Colors.neutrals.gray,
-        marginTop: 4,
+        marginTop: 3,
     },
+
+    // ── Scrollable content ───────────────────────────────────────────────────
+    content: {
+        flex: 1,
+    },
+
+    // ── Form step ───────────────────────────────────────────────────────────
     formContainer: {
-        gap: 20,
+        gap: 16,
+        paddingBottom: 8,
     },
     inputGroup: {
-        gap: 8,
+        gap: 6,
     },
     label: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '600',
         color: Colors.secondary.deepMaroon,
-        marginLeft: 4,
+        marginLeft: 2,
     },
     inputWrapper: {
         flexDirection: 'row',
@@ -360,25 +474,41 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#E5E5E5',
-        paddingHorizontal: 15,
+        paddingHorizontal: 14,
         height: 50,
+    },
+    inputWrapperMulti: {
+        height: 90,
+        alignItems: 'flex-start',
+        paddingTop: 12,
     },
     inputIcon: {
         marginRight: 10,
     },
     input: {
         flex: 1,
-        fontSize: 16,
+        fontSize: 15,
         color: Colors.secondary.deepMaroon,
     },
     textArea: {
-        height: 100,
+        height: 70,
         textAlignVertical: 'top',
-        paddingTop: 15,
     },
+    gpsButton: {
+        padding: 6,
+        marginLeft: 4,
+    },
+    fieldHint: {
+        fontSize: 11,
+        color: Colors.neutrals.gray,
+        marginLeft: 4,
+        marginTop: 2,
+    },
+
+    // ── Selection step ──────────────────────────────────────────────────────
     optionsContainer: {
         gap: 12,
-        paddingBottom: 20,
+        paddingBottom: 12,
     },
     optionCard: {
         flexDirection: 'row',
@@ -388,7 +518,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         borderWidth: 1,
         borderColor: 'transparent',
-        shadowColor: "#000",
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 2,
@@ -396,14 +526,14 @@ const styles = StyleSheet.create({
     },
     optionCardSelected: {
         borderColor: Colors.primary.forestGreen,
-        backgroundColor: Colors.neutrals.betterBeige, // Using Better Beige for selected state
+        backgroundColor: Colors.neutrals.betterBeige,
         shadowColor: Colors.primary.forestGreen,
         shadowOpacity: 0.1,
     },
     optionText: {
-        fontSize: 16,
+        fontSize: 15,
         color: Colors.secondary.deepMaroon,
-        marginLeft: 15,
+        marginLeft: 14,
         flex: 1,
     },
     optionTextSelected: {
@@ -413,14 +543,16 @@ const styles = StyleSheet.create({
     checkIcon: {
         marginLeft: 'auto',
     },
+
+    // ── Footer ──────────────────────────────────────────────────────────────
     footer: {
-        marginTop: 10,
-        gap: 15,
-        marginBottom: 10,
+        paddingTop: 12,
+        paddingBottom: Platform.OS === 'ios' ? 4 : 8,
+        gap: 10,
     },
     nextButton: {
         backgroundColor: Colors.primary.forestGreen,
-        paddingVertical: 16,
+        paddingVertical: 15,
         borderRadius: 12,
         flexDirection: 'row',
         alignItems: 'center',
@@ -432,9 +564,14 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 4,
     },
+    nextButtonDisabled: {
+        backgroundColor: Colors.neutrals.gray,
+        shadowOpacity: 0,
+        elevation: 0,
+    },
     nextButtonText: {
         color: Colors.neutrals.white,
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
     },
     skipButton: {
