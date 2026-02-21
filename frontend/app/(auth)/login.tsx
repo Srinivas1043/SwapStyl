@@ -91,13 +91,20 @@ export default function Login() {
 
     async function verifyOtp() {
         setLoading(true);
-        const { error } = await supabase.auth.verifyOtp({
+        const { data, error } = await supabase.auth.verifyOtp({
             phone: phone,
             token: otp,
             type: 'sms',
         });
-        if (error) Alert.alert(error.message);
-        setLoading(false);
+        if (error) {
+            Alert.alert(error.message);
+            setLoading(false);
+        } else if (data.user) {
+            // Route user correctly after phone login
+            checkProfileAndRedirect(data.user);
+        } else {
+            setLoading(false);
+        }
     }
 
     return (
@@ -205,8 +212,8 @@ export default function Login() {
 
             <View style={styles.footer}>
                 <Text style={styles.footerText}>Don't have an account?</Text>
-                <Pressable onPress={() => router.push('/signup')}>
-                    <Text style={styles.link}>Sign Up</Text>
+                <Pressable onPress={() => router.replace('/(auth)/signup')}>
+                    <Text style={styles.link}> Sign Up</Text>
                 </Pressable>
             </View>
 

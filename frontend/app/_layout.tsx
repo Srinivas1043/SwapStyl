@@ -17,7 +17,6 @@ export default function RootLayout() {
             setSession(session);
             setInitialized(true);
         });
-
         return () => subscription.unsubscribe();
     }, []);
 
@@ -25,47 +24,16 @@ export default function RootLayout() {
         if (!initialized) return;
 
         const inAuthGroup = segments[0] === '(auth)';
-        console.log('Auth check:', { session: !!session, inAuthGroup, segment: segments[0] });
+        const inOnboarding = segments[0] === 'onboarding';
+        const inIndex = segments[0] === 'index' || segments[0] === undefined;
 
-        if (session && inAuthGroup) {
-            // User is signed in and trying to access auth screens -> redirect to home/tabs
-            checkProfileAndRedirect(session);
-        } else if (!session && !inAuthGroup && segments[0] !== 'index') {
-            // User is not signed in and trying to access protected screens -> redirect to welcome
-            // Allow access to index (welcome screen)
+        if (!session && !inAuthGroup && !inIndex) {
+            // No session and not on a public screen → back to welcome
             router.replace('/');
         }
+        // If session exists and user is on an auth screen → let login.tsx / signup.tsx handle redirect
+        // (they call checkProfileAndRedirect themselves, so no duplicate logic here)
     }, [session, initialized, segments]);
-
-    async function checkProfileAndRedirect(session: Session) {
-        try {
-            console.log('Checking profile for user:', session.user.id);
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('preferences')
-                .eq('id', session.user.id)
-                .single();
-
-            if (error && error.code !== 'PGRST116') {
-                console.error('Profile fetch error:', error);
-                // Fallback to onboarding if error isn't "row not found" (just in case)
-                // or maybe stay here? Let's go to onboarding to be safe for now.
-            }
-
-            if (profile?.preferences && Object.keys(profile.preferences).length > 0) {
-                console.log('Profile found, going to tabs');
-                router.replace('/(tabs)');
-            } else {
-                console.log('Profile not found/empty, going to onboarding');
-                // If they just signed up, they might not have profile yet. 
-                // Go to onboarding.
-                router.replace('/onboarding/preferences');
-            }
-        } catch (e) {
-            console.error('Unexpected error in checkProfile:', e);
-            router.replace('/onboarding/preferences');
-        }
-    }
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
@@ -73,6 +41,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="index" />
+                <Stack.Screen name="onboarding" />
             </Stack>
             <StatusBar style="dark" />
         </GestureHandlerRootView>

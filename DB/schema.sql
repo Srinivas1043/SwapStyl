@@ -9,6 +9,13 @@ create table public.profiles (
   avatar_url text,
   bio text,
   location text,
+  phone text,
+  gender text,
+  rating numeric(3,1) default 0.0,
+  items_swapped integer default 0,
+  items_listed integer default 0,
+  wishlist_count integer default 0,
+  onboarding_completed_at timestamp with time zone,
   preferences jsonb default '{}'::jsonb,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

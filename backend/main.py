@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import items, swipes
+from routers import items, swipes, profiles
 
 app = FastAPI(title="SwapStyl API", version="0.1.0")
 
@@ -14,6 +14,7 @@ app.add_middleware(
 
 app.include_router(items.router)
 app.include_router(swipes.router)
+app.include_router(profiles.router)
 
 @app.get("/")
 def read_root():
