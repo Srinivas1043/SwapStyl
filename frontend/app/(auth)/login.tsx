@@ -18,20 +18,11 @@ export default function Login() {
 
     async function signInWithEmail() {
         setLoading(true);
-        console.log('Attempting login for:', email);
-
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
-
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
-            console.error('Login error:', error.message);
-            Alert.alert(error.message);
+            Alert.alert('Login failed', error.message);
             setLoading(false);
         } else {
-            console.log('Login success:', data.user?.id);
-            // Manual check/redirect to ensure something happens
             checkProfileAndRedirect(data.user!);
         }
     }

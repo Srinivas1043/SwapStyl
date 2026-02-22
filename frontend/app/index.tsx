@@ -1,30 +1,48 @@
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Link } from 'expo-router';
 import { Colors } from '../constants/Colors';
 
+const FEATURES = [
+    { icon: '🔄', text: 'Swap clothes you no longer wear' },
+    { icon: '🌿', text: 'Earn Eco Points with every swap' },
+    { icon: '🤖', text: 'AI-verified quality listings' },
+];
+
 export default function Welcome() {
-    const router = useRouter();
-
-    // Navigation is handled by RootLayout now
-
     return (
         <View style={styles.container}>
-            <View style={styles.logoContainer}>
-                {/* Placeholder for Logo */}
+            {/* Hero */}
+            <View style={styles.hero}>
+                <View style={styles.badge}>
+                    <Text style={styles.badgeText}>🌱 Sustainable Fashion</Text>
+                </View>
                 <Text style={styles.logoText}>SwapStyl</Text>
-                <Text style={styles.tagline}>Your next favourite outfit is waiting!</Text>
+                <Text style={styles.tagline}>
+                    Give your wardrobe a second life.{'\n'}Swap. Earn. Sustain.
+                </Text>
             </View>
 
+            {/* Feature highlights */}
+            <View style={styles.features}>
+                {FEATURES.map(f => (
+                    <View key={f.text} style={styles.featureRow}>
+                        <Text style={styles.featureIcon}>{f.icon}</Text>
+                        <Text style={styles.featureText}>{f.text}</Text>
+                    </View>
+                ))}
+            </View>
+
+            {/* CTA */}
             <View style={styles.buttonContainer}>
-                <Link href="/(auth)/login" asChild>
-                    <Pressable style={styles.loginButton}>
-                        <Text style={styles.loginButtonText}>Login</Text>
+                <Link href="/(auth)/signup" asChild>
+                    <Pressable style={styles.primaryButton}>
+                        <Text style={styles.primaryButtonText}>Get Started — It's Free</Text>
                     </Pressable>
                 </Link>
 
-                <Link href="/(auth)/signup" asChild>
-                    <Pressable style={styles.signupButton}>
-                        <Text style={styles.signupButtonText}>Sign Up</Text>
+                <Link href="/(auth)/login" asChild>
+                    <Pressable style={styles.secondaryButton}>
+                        <Text style={styles.secondaryButtonText}>I already have an account</Text>
                     </Pressable>
                 </Link>
             </View>
@@ -37,51 +55,89 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.neutrals.beige,
         justifyContent: 'space-between',
-        padding: 20,
-        paddingVertical: 50,
+        paddingHorizontal: 28,
+        paddingTop: 80,
+        paddingBottom: 52,
     },
-    logoContainer: {
-        flex: 1,
-        justifyContent: 'center',
+    hero: {
         alignItems: 'center',
+        gap: 12,
+    },
+    badge: {
+        backgroundColor: Colors.secondary.pista,
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        borderRadius: 20,
+        marginBottom: 4,
+    },
+    badgeText: {
+        fontSize: 13,
+        color: Colors.primary.forestGreen,
+        fontWeight: '600',
     },
     logoText: {
-        fontSize: 40,
-        fontWeight: 'bold',
+        fontSize: 52,
+        fontWeight: '800',
         color: Colors.primary.forestGreen,
-        marginBottom: 10,
+        letterSpacing: -1,
     },
     tagline: {
-        fontSize: 18,
+        fontSize: 17,
         color: Colors.secondary.deepMaroon,
         textAlign: 'center',
+        lineHeight: 26,
+        fontWeight: '500',
+    },
+    features: {
+        gap: 16,
+        paddingHorizontal: 8,
+    },
+    featureRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        backgroundColor: '#fff',
+        paddingVertical: 14,
+        paddingHorizontal: 18,
+        borderRadius: 14,
+        shadowColor: '#000',
+        shadowOpacity: 0.04,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 1,
+    },
+    featureIcon: { fontSize: 22 },
+    featureText: {
+        fontSize: 15,
+        color: Colors.secondary.deepMaroon,
+        fontWeight: '500',
+        flexShrink: 1,
     },
     buttonContainer: {
-        width: '100%',
-        gap: 15,
+        gap: 12,
     },
-    loginButton: {
+    primaryButton: {
         backgroundColor: Colors.primary.forestGreen,
-        padding: 15,
-        borderRadius: 10,
+        padding: 17,
+        borderRadius: 14,
         alignItems: 'center',
     },
-    loginButtonText: {
-        color: Colors.neutrals.white,
+    primaryButtonText: {
+        color: '#fff',
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '700',
     },
-    signupButton: {
-        backgroundColor: Colors.neutrals.offWhite,
-        padding: 15,
-        borderRadius: 10,
+    secondaryButton: {
+        backgroundColor: 'transparent',
+        padding: 16,
+        borderRadius: 14,
         alignItems: 'center',
-        borderWidth: 1,
+        borderWidth: 1.5,
         borderColor: Colors.primary.forestGreen,
     },
-    signupButtonText: {
+    secondaryButtonText: {
         color: Colors.primary.forestGreen,
-        fontSize: 16,
-        fontWeight: 'bold',
+        fontSize: 15,
+        fontWeight: '600',
     },
 });

@@ -48,6 +48,9 @@ def get_my_profile(current_user = Depends(get_current_user), supabase = Depends(
     else:
         profile["rating"] = 0.0
 
+    # 5. Eco points (read from DB — updated on swap completion)
+    profile["eco_points"] = profile.get("eco_points") or 0
+
     return profile
 
 @router.put("/me")

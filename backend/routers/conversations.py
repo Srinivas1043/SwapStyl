@@ -278,15 +278,15 @@ def update_deal_status(
                 for iid in items_to_swap:
                     admin_client.table("items").update({"status": "swapped"}).eq("id", iid).execute()
 
-                # 2. Grant 200 points to both users
-                user1 = admin_client.table("profiles").select("points").eq("id", conv["user1_id"]).single().execute()
-                user2 = admin_client.table("profiles").select("points").eq("id", conv["user2_id"]).single().execute()
-                
-                p1 = (user1.data.get("points") or 0) + 200 if user1.data else 200
-                p2 = (user2.data.get("points") or 0) + 200 if user2.data else 200
-                
-                admin_client.table("profiles").update({"points": p1}).eq("id", conv["user1_id"]).execute()
-                admin_client.table("profiles").update({"points": p2}).eq("id", conv["user2_id"]).execute()
+                # 2. Grant 200 eco_points to both users
+                user1 = admin_client.table("profiles").select("eco_points").eq("id", conv["user1_id"]).single().execute()
+                user2 = admin_client.table("profiles").select("eco_points").eq("id", conv["user2_id"]).single().execute()
+
+                p1 = (user1.data.get("eco_points") or 0) + 200 if user1.data else 200
+                p2 = (user2.data.get("eco_points") or 0) + 200 if user2.data else 200
+
+                admin_client.table("profiles").update({"eco_points": p1}).eq("id", conv["user1_id"]).execute()
+                admin_client.table("profiles").update({"eco_points": p2}).eq("id", conv["user2_id"]).execute()
             except Exception as e:
                 print(f"Error processing swap side-effects {conv_id}: {e}")
 

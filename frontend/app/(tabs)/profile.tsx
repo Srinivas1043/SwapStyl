@@ -7,6 +7,7 @@ import {
     ScrollView,
     TouchableOpacity,
     Pressable,
+    Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
@@ -50,10 +51,24 @@ export default function ProfileScreen() {
     }
 
     async function signOut() {
-        // Sign out from Supabase — root _layout onAuthStateChange will clear session state
-        await supabase.auth.signOut();
-        // Navigate explicitly to login so user lands on login, not home tabs
-        router.replace('/(auth)/login');
+        Alert.alert(
+            'Log out',
+            'Are you sure you want to log out?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Log out',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await supabase.auth.signOut();
+                        } catch (e: any) {
+                            setBannerMsg(friendlyError(e?.message || 'Logout failed'));
+                        }
+                    },
+                },
+            ]
+        );
     }
 
     if (loading) {
@@ -68,7 +83,7 @@ export default function ProfileScreen() {
 
     const stats = [
         { label: 'Items Swapped', value: profile?.items_swapped ?? 0 },
-        { label: 'Points', value: profile?.points ?? 0 },
+        { label: '🌿 Eco Points', value: profile?.eco_points ?? 0 },
         { label: 'Wishlist', value: profile?.wishlist_count ?? 0 },
         { label: 'Items Listed', value: profile?.items_listed ?? 0 },
     ];
