@@ -11,7 +11,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.error('Supabase URL or Key not found in environment variables');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Ensure URL is valid to prevent crash
+const isValidUrl = (url: string) => {
+    try { return Boolean(new URL(url)); } catch (e) { return false; }
+};
+
+const safeUrl = isValidUrl(supabaseUrl) ? supabaseUrl : 'https://placeholder.supabase.co';
+const safeKey = supabaseAnonKey || 'placeholder-key';
+
+export const supabase = createClient(safeUrl, safeKey, {
     auth: {
         storage: AsyncStorage,
         autoRefreshToken: true,
