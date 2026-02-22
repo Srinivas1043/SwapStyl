@@ -1,4 +1,5 @@
-import { View } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
+import { Colors } from '../constants/Colors';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -35,6 +36,14 @@ export default function RootLayout() {
             router.replace('/(auth)/login');
         }
     }, [session, initialized, segments]);
+
+    if (!initialized) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={Colors.primary.forestGreen} />
+            </View>
+        );
+    }
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
