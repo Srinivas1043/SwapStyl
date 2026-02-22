@@ -11,13 +11,13 @@ import {
     Platform,
     ActivityIndicator,
 } from 'react-native';
-import { useRouter, useSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Colors } from '../../constants/Colors';
 
 export default function ResetPassword() {
     const router = useRouter();
-    const params = useSearchParams();
+    const params = useLocalSearchParams();
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
