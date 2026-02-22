@@ -72,10 +72,12 @@ export default function ProfileScreen() {
     const stats = [
         { label: 'Items Swapped', value: profile?.items_swapped ?? 0 },
         { label: 'Points', value: profile?.points ?? 0 },
+        { label: 'Wishlist', value: profile?.wishlist_count ?? 0 },
         { label: 'Items Listed', value: profile?.items_listed ?? 0 },
     ];
 
     const menuItems = [
+        { icon: '♡', label: 'My Wishlist', route: '/wishlists' },
         { icon: ICONS.swapHistory, label: 'Swap History', route: '/history' },
         { icon: ICONS.reviews, label: 'Reviews', route: '/reviews/me' },
         { icon: ICONS.settings, label: 'Settings', route: '/settings' },

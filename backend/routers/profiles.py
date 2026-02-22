@@ -24,7 +24,23 @@ def get_my_profile(current_user = Depends(get_current_user), supabase = Depends(
     response = supabase.table("profiles").select("*").eq("id", current_user.id).single().execute()
     if not response.data:
         raise HTTPException(status_code=404, detail="Profile not found")
-    return response.data
+        
+    profile = response.data
+    
+    # Calculate live stats
+    # 1. Items listed (including pending_review and available and swapped)
+    items_count_resp = supabase.table("items").select("id", count="exact").eq("owner_id", current_user.id).execute()
+    profile["items_listed"] = items_count_resp.count if items_count_resp.count is not None else 0
+    
+    # 2. Items swapped
+    swapped_count_resp = supabase.table("items").select("id", count="exact").eq("owner_id", current_user.id).eq("status", "swapped").execute()
+    profile["items_swapped"] = swapped_count_resp.count if swapped_count_resp.count is not None else 0
+    
+    # 3. Wishlist count
+    wishlist_count_resp = supabase.table("wishlists").select("id", count="exact").eq("user_id", current_user.id).execute()
+    profile["wishlist_count"] = wishlist_count_resp.count if wishlist_count_resp.count is not None else 0
+
+    return profile
 
 @router.put("/me")
 def update_my_profile(
