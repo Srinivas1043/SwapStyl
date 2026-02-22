@@ -5,13 +5,16 @@ const getBackendUrl = () => {
     // In dev, use the machine's IP from Expo config to work on physical devices/emulators
     const hostUri = Constants.expoConfig?.hostUri;
     const host = hostUri ? hostUri.split(':')[0] : 'localhost';
-    
+
     // Default backend port is 8000
     // Use http because we don't have SSL in dev usually
     return `http://${host}:8000`;
 };
 
-export const API_URL = getBackendUrl();
+// export const API_URL = getBackendUrl();
+
+export const API_URL = 'https://swapstyl-api.onrender.com';
+
 
 export const authenticatedFetch = async (endpoint: string, options: RequestInit = {}) => {
     const { data: { session } } = await supabase.auth.getSession();
