@@ -111,7 +111,7 @@ export default function ProfileScreen() {
                             <View style={styles.ratingBadge}>
                                 <Text style={styles.starIcon}>{ICONS.star}</Text>
                                 <Text style={styles.ratingText}>
-                                    {profile?.rating ? Number(profile.rating).toFixed(1) : '4.8'}
+                                    {profile?.rating ? Number(profile.rating).toFixed(1) : '0.0'}
                                 </Text>
                             </View>
                             <TouchableOpacity

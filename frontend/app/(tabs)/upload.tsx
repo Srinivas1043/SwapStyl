@@ -83,7 +83,7 @@ export default function UploadScreen() {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
             allowsEditing: true,
-            quality: 0.85,
+            quality: 0.75,
         });
 
         if (!result.canceled && result.assets[0]) {
@@ -339,7 +339,7 @@ const st = StyleSheet.create({
     photoSection: { marginBottom: 24 },
     photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
     photoSlotWrapper: { width: '30%' },
-    photoSlot: { aspectRatio: 1, borderRadius: 12, overflow: 'hidden', position: 'relative' },
+    photoSlot: { width: '100%', aspectRatio: 1, borderRadius: 12, overflow: 'hidden', position: 'relative' },
     photoSlotEmpty: { backgroundColor: '#EEEAE4', borderWidth: 1.5, borderColor: '#DDD8D0', borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', gap: 4 },
     slotLabel: { fontSize: 10, fontWeight: '600', color: Colors.secondary.deepMaroon, textAlign: 'center' },
     slotLabelOptional: { color: Colors.neutrals.gray },

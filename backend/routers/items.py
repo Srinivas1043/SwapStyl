@@ -232,7 +232,7 @@ async def re_verify_item(
         raise HTTPException(status_code=422, detail="No images to verify")
 
     # Call the verify endpoint logic directly
-    from routers.verify import _call_gemini_sync
+    from routers.verify import _call_openai_sync
     import asyncio, httpx
 
     # Download brand-tag photo (index 1 preferred)
@@ -246,7 +246,7 @@ async def re_verify_item(
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Could not fetch image: {e}")
 
-    result = await asyncio.to_thread(_call_gemini_sync, image_bytes, mime_type, brand)
+    result = await asyncio.to_thread(_call_openai_sync, image_bytes, mime_type, brand)
     confidence = result["confidence"]
     new_status = "available" if confidence >= 85 else "pending_review"
 

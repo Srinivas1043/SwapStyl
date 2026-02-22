@@ -40,6 +40,14 @@ def get_my_profile(current_user = Depends(get_current_user), supabase = Depends(
     wishlist_count_resp = supabase.table("wishlists").select("id", count="exact").eq("user_id", current_user.id).execute()
     profile["wishlist_count"] = wishlist_count_resp.count if wishlist_count_resp.count is not None else 0
 
+    # 4. Average Rating
+    reviews_resp = supabase.table("reviews").select("rating").eq("reviewee_id", current_user.id).execute()
+    if reviews_resp.data:
+        ratings = [r["rating"] for r in reviews_resp.data]
+        profile["rating"] = round(sum(ratings) / len(ratings), 1)
+    else:
+        profile["rating"] = 0.0
+
     return profile
 
 @router.put("/me")
