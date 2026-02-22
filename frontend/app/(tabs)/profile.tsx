@@ -6,12 +6,14 @@ import {
     ActivityIndicator,
     ScrollView,
     TouchableOpacity,
+    Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { authenticatedFetch } from '../../lib/api';
 
 const ICONS = {
@@ -36,8 +38,8 @@ export default function ProfileScreen() {
 
     async function loadProfile() {
         try {
-            const data = await authenticatedFetch('/profiles/me');
-            setProfile(data);
+            const profileData = await authenticatedFetch('/profiles/me');
+            setProfile(profileData);
         } catch (error) {
             console.log('Error loading profile:', error);
         } finally {
@@ -64,16 +66,17 @@ export default function ProfileScreen() {
 
     const stats = [
         { label: 'Items Swapped', value: profile?.items_swapped ?? 0 },
-        { label: 'Items Listed', value: profile?.items_listed ?? 0 },
+        { label: 'Points', value: profile?.points ?? 0 },
         { label: 'Wishlist', value: profile?.wishlist_count ?? 0 },
+        { label: 'Items Listed', value: profile?.items_listed ?? 0 },
     ];
 
-    const wardrobeItems = [0, 1, 2];
-
     const menuItems = [
-        { icon: ICONS.swapHistory, label: 'Swap History' },
-        { icon: ICONS.reviews, label: 'Reviews' },
-        { icon: ICONS.settings, label: 'Settings' },
+        { icon: '👕', label: 'My Wardrobe', route: '/wardrobe' },
+        { icon: '♡', label: 'My Wishlist', route: '/wishlists' },
+        { icon: ICONS.swapHistory, label: 'Swap History', route: '/history' },
+        { icon: ICONS.reviews, label: 'Reviews', route: '/reviews/me' },
+        { icon: ICONS.settings, label: 'Settings', route: '/settings' },
     ];
 
     return (
@@ -104,11 +107,21 @@ export default function ProfileScreen() {
                         <Text style={styles.location}>
                             {profile?.location || 'Location not set'}
                         </Text>
-                        <View style={styles.ratingBadge}>
-                            <Text style={styles.starIcon}>{ICONS.star}</Text>
-                            <Text style={styles.ratingText}>
-                                {profile?.rating ? Number(profile.rating).toFixed(1) : '4.8'}
-                            </Text>
+                        <View style={styles.headerActions}>
+                            <View style={styles.ratingBadge}>
+                                <Text style={styles.starIcon}>{ICONS.star}</Text>
+                                <Text style={styles.ratingText}>
+                                    {profile?.rating ? Number(profile.rating).toFixed(1) : '4.8'}
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={styles.editProfileBtn}
+                                onPress={() => router.push('/edit-profile')}
+                                activeOpacity={0.7}
+                            >
+                                <Ionicons name="pencil-outline" size={13} color={Colors.secondary.deepMaroon} />
+                                <Text style={styles.editProfileText}>Edit</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
                 </View>
@@ -126,22 +139,6 @@ export default function ProfileScreen() {
                     ))}
                 </View>
 
-                {/* ── Wardrobe ── */}
-                <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Wardrobe</Text>
-                        <TouchableOpacity style={styles.addItemButton} activeOpacity={0.7}>
-                            <Text style={styles.addItemText}>+ Add Item</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.wardrobeGrid}>
-                        {wardrobeItems.map((idx) => (
-                            <View key={idx} style={styles.wardrobeCard} />
-                        ))}
-                    </View>
-                </View>
-
                 {/* ── Menu Items ── */}
                 <View style={styles.menuSection}>
                     {menuItems.map((item, idx) => (
@@ -152,6 +149,7 @@ export default function ProfileScreen() {
                                 idx < menuItems.length - 1 && styles.menuItemBorder,
                             ]}
                             activeOpacity={0.7}
+                            onPress={() => item.route && router.push(item.route as any)}
                         >
                             <Text style={styles.menuIcon}>{item.icon}</Text>
                             <Text style={styles.menuLabel}>{item.label}</Text>
@@ -304,27 +302,42 @@ const styles = StyleSheet.create({
         color: Colors.neutrals.black,
     },
     addItemButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
         borderWidth: 1,
-        borderColor: '#CCCCCC',
+        borderColor: Colors.primary.forestGreen,
         borderRadius: 8,
-        paddingHorizontal: 12,
+        paddingHorizontal: 10,
         paddingVertical: 6,
     },
     addItemText: {
         fontSize: 13,
-        color: '#444',
-        fontWeight: '500',
+        color: Colors.primary.forestGreen,
+        fontWeight: '600',
     },
-    wardrobeGrid: {
+    headerActions: {
         flexDirection: 'row',
-        gap: 10,
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 4,
     },
-    wardrobeCard: {
-        flex: 1,
-        height: 110,
-        backgroundColor: Colors.neutrals.betterBeige,
-        borderRadius: 10,
+    editProfileBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        borderWidth: 1,
+        borderColor: Colors.secondary.deepMaroon,
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
     },
+    editProfileText: {
+        fontSize: 12,
+        color: Colors.secondary.deepMaroon,
+        fontWeight: '600',
+    },
+
 
     // ── Menu ─────────────────────────────────────────────
     menuSection: {

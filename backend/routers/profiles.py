@@ -14,6 +14,8 @@ class ProfileUpdate(BaseModel):
     phone: Optional[str] = None
     gender: Optional[str] = None
     avatar_url: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     preferences: Optional[Dict[str, Any]] = None
     onboarding_completed_at: Optional[str] = None   # ISO-8601 string
 
@@ -22,7 +24,23 @@ def get_my_profile(current_user = Depends(get_current_user), supabase = Depends(
     response = supabase.table("profiles").select("*").eq("id", current_user.id).single().execute()
     if not response.data:
         raise HTTPException(status_code=404, detail="Profile not found")
-    return response.data
+        
+    profile = response.data
+    
+    # Calculate live stats
+    # 1. Items listed (including pending_review and available and swapped)
+    items_count_resp = supabase.table("items").select("id", count="exact").eq("owner_id", current_user.id).execute()
+    profile["items_listed"] = items_count_resp.count if items_count_resp.count is not None else 0
+    
+    # 2. Items swapped
+    swapped_count_resp = supabase.table("items").select("id", count="exact").eq("owner_id", current_user.id).eq("status", "swapped").execute()
+    profile["items_swapped"] = swapped_count_resp.count if swapped_count_resp.count is not None else 0
+    
+    # 3. Wishlist count
+    wishlist_count_resp = supabase.table("wishlists").select("id", count="exact").eq("user_id", current_user.id).execute()
+    profile["wishlist_count"] = wishlist_count_resp.count if wishlist_count_resp.count is not None else 0
+
+    return profile
 
 @router.put("/me")
 def update_my_profile(
@@ -38,6 +56,7 @@ def update_my_profile(
     # id is required for upsert (creates row if first time)
     update_data["id"] = current_user.id
 
+    # supabase-py upsert returns data without explicitly chaining .select() in this version
     response = supabase.table("profiles").upsert(update_data).execute()
 
     if not response.data:
