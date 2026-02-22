@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, Alert, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { Colors } from '../../constants/Colors';
@@ -108,7 +108,8 @@ export default function Login() {
     }
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView style={{ flex: 1, backgroundColor: Colors.neutrals.white }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             <Text style={styles.title}>
                 {authMode === 'email' ? 'Login' : authMode === 'phone' ? 'Phone Login' : 'Verify OTP'}
             </Text>
@@ -217,16 +218,16 @@ export default function Login() {
                 </Pressable>
             </View>
 
-        </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
+        flexGrow: 1,
         padding: 20,
         justifyContent: 'center',
-        backgroundColor: Colors.neutrals.white,
     },
     title: {
         fontSize: 24,

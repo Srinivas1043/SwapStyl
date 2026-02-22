@@ -223,7 +223,7 @@ export default function UploadScreen() {
 
     return (
         <SafeAreaView style={st.safe} edges={['top']}>
-            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
                 <ScrollView contentContainerStyle={st.container} keyboardShouldPersistTaps="handled">
 
                     {/* Header */}

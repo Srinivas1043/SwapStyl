@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { authenticatedFetch } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
+import StatusBanner, { friendlyError } from '../../components/StatusBanner';
 
 const DEAL_COLORS: Record<string, string> = {
     interested: '#8B6000',
@@ -39,6 +40,7 @@ export default function ChatsScreen() {
     const router = useRouter();
     const [convs, setConvs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [bannerMsg, setBannerMsg] = useState<string | null>(null);
 
     useFocusEffect(useCallback(() => {
         load();
@@ -62,8 +64,8 @@ export default function ChatsScreen() {
         try {
             const data = await authenticatedFetch('/conversations');
             setConvs(data || []);
-        } catch (e) {
-            console.error(e);
+        } catch (e: any) {
+            setBannerMsg(friendlyError(e?.message || String(e)));
         } finally {
             setLoading(false);
         }
@@ -136,6 +138,8 @@ export default function ChatsScreen() {
 
     return (
         <SafeAreaView style={s.safe} edges={['top']}>
+            <StatusBanner message={bannerMsg} onDismiss={() => setBannerMsg(null)} />
+
             <View style={s.header}>
                 <Text style={s.headerTitle}>Chats & Deals</Text>
                 {convs.length > 0 && (

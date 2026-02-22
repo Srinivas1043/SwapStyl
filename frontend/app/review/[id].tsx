@@ -46,8 +46,8 @@ export default function LeaveReviewScreen() {
         <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
             <KeyboardAvoidingView
                 style={s.flex}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
             >
                 <View style={s.header}>
                     <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>

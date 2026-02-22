@@ -9,6 +9,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { authenticatedFetch } from '../../lib/api';
+import StatusBanner, { friendlyError } from '../../components/StatusBanner';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const CARD_W = SCREEN_W - 32;
@@ -334,6 +335,7 @@ export default function SwapScreen() {
     const [detailItem, setDetailItem] = useState<Item | null>(null);
     const [wishlisted, setWishlisted] = useState<Set<string>>(new Set());
     const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+    const [bannerMsg, setBannerMsg] = useState<string | null>(null);
     const router = useRouter();
 
     const fetchFeed = useCallback(async (f: Filters, p: number, replace = false) => {
@@ -359,7 +361,7 @@ export default function SwapScreen() {
             setHasMore(data.has_more);
             setPage(p);
         } catch (e: any) {
-            console.error('Feed fetch error', e.message);
+            setBannerMsg(friendlyError(e.message));
         } finally {
             setLoading(false);
         }
@@ -401,7 +403,7 @@ export default function SwapScreen() {
                 }
             }
         } catch (e: any) {
-            console.error('Swipe record error', e.message);
+            setBannerMsg(friendlyError(e.message));
         }
     };
 
@@ -445,6 +447,9 @@ export default function SwapScreen() {
 
     return (
         <SafeAreaView style={styles.safe} edges={['top']}>
+            {/* Status banner */}
+            <StatusBanner message={bannerMsg} onDismiss={() => setBannerMsg(null)} />
+
             {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.logo}>Swapstyl</Text>

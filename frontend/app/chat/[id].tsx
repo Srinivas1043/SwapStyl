@@ -410,11 +410,11 @@ export default function ChatScreen() {
     const status = conv?.status || 'interested';
 
     return (
-        <SafeAreaView style={s.safe} edges={['top']}>
+        <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
             <KeyboardAvoidingView
-                style={s.safe}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
             >
 
                 {/* ── Header ── */}
@@ -468,6 +468,9 @@ export default function ChatScreen() {
                     )}
                     contentContainerStyle={s.messageList}
                     onContentSizeChange={() => flatRef.current?.scrollToEnd({ animated: false })}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="interactive"
+                    automaticallyAdjustKeyboardInsets
                 />
 
                 {/* ── Input row ── */}

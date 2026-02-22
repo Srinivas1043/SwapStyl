@@ -15,6 +15,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { authenticatedFetch } from '../../lib/api';
+import StatusBanner, { friendlyError } from '../../components/StatusBanner';
 
 const ICONS = {
     swapHistory: '↺',
@@ -29,6 +30,7 @@ export default function ProfileScreen() {
     const router = useRouter();
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [bannerMsg, setBannerMsg] = useState<string | null>(null);
 
     useFocusEffect(
         useCallback(() => {
@@ -40,8 +42,8 @@ export default function ProfileScreen() {
         try {
             const profileData = await authenticatedFetch('/profiles/me');
             setProfile(profileData);
-        } catch (error) {
-            console.log('Error loading profile:', error);
+        } catch (error: any) {
+            setBannerMsg(friendlyError(error?.message || String(error)));
         } finally {
             setLoading(false);
         }
@@ -81,6 +83,7 @@ export default function ProfileScreen() {
 
     return (
         <SafeAreaView style={styles.safeArea}>
+            <StatusBanner message={bannerMsg} onDismiss={() => setBannerMsg(null)} />
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.container}
