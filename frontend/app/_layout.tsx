@@ -24,15 +24,16 @@ export default function RootLayout() {
         if (!initialized) return;
 
         const inAuthGroup = segments[0] === '(auth)';
-        const inOnboarding = segments[0] === 'onboarding';
+        const inOnboarding = segments[0] === 'onboarding'; 
         const inIndex = segments[0] === 'index' || segments[0] === undefined;
+
+        console.log('Auth check:', { session: !!session, segments, inAuthGroup, inIndex });
 
         if (!session && !inAuthGroup && !inIndex) {
             // No session and not on a public screen → back to welcome
-            router.replace('/');
+            // Also explicitly close any open modals/stacks if needed
+            router.replace('/(auth)/login');
         }
-        // If session exists and user is on an auth screen → let login.tsx / signup.tsx handle redirect
-        // (they call checkProfileAndRedirect themselves, so no duplicate logic here)
     }, [session, initialized, segments]);
 
     return (

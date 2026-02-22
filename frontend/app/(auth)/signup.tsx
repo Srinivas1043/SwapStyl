@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as Linking from 'expo-linking';
 import {
     View,
     Text,
@@ -44,11 +45,15 @@ export default function Signup() {
 
         setLoading(true);
         try {
+            const redirectTo = Linking.createURL('/(auth)/login');
+            console.log('Signup Redirect URL:', redirectTo);
+
             const { data, error: signUpError } = await supabase.auth.signUp({
                 email: email.trim(),
                 password,
                 options: {
                     data: { full_name: fullName.trim() },
+                    emailRedirectTo: redirectTo,
                 },
             });
 
@@ -254,49 +259,6 @@ export default function Signup() {
     );
 }
 
-                    <Text style={styles.label}>Password *</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Min. 6 characters"
-                        onChangeText={setPassword}
-                        value={password}
-                        secureTextEntry
-                        placeholderTextColor={Colors.neutrals.gray}
-                        autoCapitalize="none"
-                    />
-
-                    <Text style={styles.label}>Confirm Password *</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Repeat your password"
-                        onChangeText={setConfirmPassword}
-                        value={confirmPassword}
-                        secureTextEntry
-                        placeholderTextColor={Colors.neutrals.gray}
-                        autoCapitalize="none"
-                    />
-                </View>
-
-                <Pressable
-                    style={[styles.button, loading && styles.buttonDisabled]}
-                    onPress={signUpWithEmail}
-                    disabled={loading}
-                >
-                    <Text style={styles.buttonText}>
-                        {loading ? 'Creating account...' : 'Sign Up'}
-                    </Text>
-                </Pressable>
-
-                <View style={styles.footer}>
-                    <Text style={styles.footerText}>Already have an account?</Text>
-                    <Pressable onPress={() => router.replace('/(auth)/login')}>
-                        <Text style={styles.link}> Login</Text>
-                    </Pressable>
-                </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
-    );
-}
 
 
 const styles = StyleSheet.create({

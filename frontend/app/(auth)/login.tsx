@@ -135,8 +135,11 @@ export default function Login() {
 
         setLoading(true);
         try {
-            const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-                redirectTo: Linking.createURL('/(auth)/reset-password'),
+            const redirectTo = Linking.createURL('/(auth)/reset-password');
+            console.log('Reset Password Redirect URL:', redirectTo);
+
+            const { error: resetError } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+                redirectTo,
             });
 
             if (error) {
