@@ -1,16 +1,13 @@
 {
   "cli": {
     "version": ">= 16.19.1",
-          "requireCommit": true,
+    "requireCommit": true,
     "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "env": {
-        "EXPO_USE_METRO_WORKSPACE_ROOT": "1"
-      }
+      "distribution": "internal"
     },
     "preview": {
       "android": {
@@ -20,10 +17,7 @@
         "simulator": false,
         "buildConfiguration": "Release"
       },
-      "distribution": "internal",
-      "env": {
-        "EXPO_USE_METRO_WORKSPACE_ROOT": "1"
-      }
+      "distribution": "internal"
     },
     "production": {
       "android": {
@@ -32,10 +26,7 @@
       "ios": {
         "buildConfiguration": "Release"
       },
-      "autoIncrement": true,
-      "env": {
-        "EXPO_USE_METRO_WORKSPACE_ROOT": "1"
-      }
+      "autoIncrement": true
     }
   },
   "submit": {
