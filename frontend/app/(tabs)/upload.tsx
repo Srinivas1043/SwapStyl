@@ -236,8 +236,8 @@ export default function UploadScreen() {
                             {PHOTO_SLOTS.map((slot, i) => (
                                 <View key={i} style={st.photoSlotWrapper}>
                                     {photos[i] ? (
-                                        <TouchableOpacity style={st.photoSlot} activeOpacity={0.9}>
-                                            <Image source={{ uri: photos[i]! }} style={{ width: '100%', height: '100%', borderRadius: 12 }} />
+                                        <TouchableOpacity style={st.photoSlot} onPress={() => pickPhoto(i)} activeOpacity={0.9}>
+                                            <Image source={{ uri: photos[i]! }} style={[StyleSheet.absoluteFill, { borderRadius: 12 }]} resizeMode="cover" />
                                             <TouchableOpacity style={st.photoRemove} onPress={() => removePhoto(i)}>
                                                 <Ionicons name="close-circle" size={20} color="#fff" />
                                             </TouchableOpacity>
