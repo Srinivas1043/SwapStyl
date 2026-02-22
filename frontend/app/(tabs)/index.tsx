@@ -325,6 +325,7 @@ function ItemDetailSheet({ item, visible, onClose }: { item: Item | null; visibl
 export default function SwapScreen() {
     const [items, setItems] = useState<Item[]>([]);
     const [loading, setLoading] = useState(false);
+    const swipedInSession = useRef<Set<string>>(new Set());
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -352,7 +353,9 @@ export default function SwapScreen() {
 
             const data = await authenticatedFetch(`/items/feed?${params.toString()}`);
             const fetched: Item[] = data.items || [];
-            setItems(prev => replace ? fetched : [...prev, ...fetched]);
+            // Filter out any items already swiped in this session (client-side guard)
+            const unseen = fetched.filter(it => !swipedInSession.current.has(it.id));
+            setItems(prev => replace ? unseen : [...prev, ...unseen]);
             setHasMore(data.has_more);
             setPage(p);
         } catch (e: any) {
@@ -367,6 +370,8 @@ export default function SwapScreen() {
     }, []));
 
     const handleSwipe = async (item: Item, direction: 'left' | 'right') => {
+        // Track as swiped so it never reappears in this session
+        swipedInSession.current.add(item.id);
         // Remove from local stack immediately
         setItems(prev => prev.filter(i => i.id !== item.id));
 
@@ -381,10 +386,19 @@ export default function SwapScreen() {
                 body: JSON.stringify({ item_id: item.id, direction }),
             });
             console.log('Swipe result:', JSON.stringify(result));
-            if (result?.warning) console.warn('Swipe warning:', result.warning, result.detail);
-            // Right swipe → navigate to chat if a conversation was created
-            if (direction === 'right' && result?.conversation_id) {
-                router.push(`/chat/${result.conversation_id}`);
+            if (result?.warning) console.warn('Swipe warning:', result.warning, result.detail ?? '');
+            // Right swipe → show a popup instead of force-navigating
+            if (direction === 'right') {
+                console.log('Right swipe — matched:', result?.matched, 'conv_id:', result?.conversation_id);
+                if (result?.conversation_id) {
+                    Alert.alert(
+                        'Match! ✨',
+                        'You started a new conversation. Check your Chats tab to say hi!',
+                        [{ text: 'Keep Swiping', style: 'default' }]
+                    );
+                } else {
+                    console.warn('Right swipe but no conversation_id returned:', JSON.stringify(result));
+                }
             }
         } catch (e: any) {
             console.error('Swipe record error', e.message);

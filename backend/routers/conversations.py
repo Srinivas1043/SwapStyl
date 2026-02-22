@@ -31,7 +31,7 @@ def _unread_field(conv: dict, my_id: str) -> str:
 @router.get("")
 def list_conversations(
     current_user=Depends(get_current_user),
-    supabase=Depends(get_supabase),
+    supabase=Depends(get_authenticated_client),
 ):
     """Return all conversations for current user, enriched with last message + other user profile + item."""
     uid = current_user.id
@@ -83,7 +83,7 @@ def list_conversations(
 def get_conversation(
     conv_id: str,
     current_user=Depends(get_current_user),
-    supabase=Depends(get_supabase),
+    supabase=Depends(get_authenticated_client),
 ):
     """Single conversation with full detail."""
     uid = current_user.id
@@ -120,7 +120,7 @@ def get_messages(
     page: int = Query(1, ge=1),
     page_size: int = Query(40, le=100),
     current_user=Depends(get_current_user),
-    supabase=Depends(get_supabase),
+    supabase=Depends(get_authenticated_client),
 ):
     """Paginated message history for a conversation."""
     uid = current_user.id
@@ -191,6 +191,20 @@ def send_message(
     resp = supabase.table("messages").insert(row).execute()
     if not resp.data:
         raise HTTPException(status_code=500, detail="Failed to send message")
+
+    # Update conversation: bump last_message_at + increment recipient's unread counter
+    try:
+        recipient_id = conv["user2_id"] if conv["user1_id"] == uid else conv["user1_id"]
+        recipient_unread_field = "unread_user1" if conv["user1_id"] == recipient_id else "unread_user2"
+        conv_detail = supabase.table("conversations").select(recipient_unread_field).eq("id", conv_id).single().execute()
+        current_unread = (conv_detail.data or {}).get(recipient_unread_field, 0) or 0
+        supabase.table("conversations").update({
+            "last_message_at": "now()",
+            recipient_unread_field: current_unread + 1,
+        }).eq("id", conv_id).execute()
+    except Exception:
+        pass  # Non-critical
+
     return resp.data[0]
 
 

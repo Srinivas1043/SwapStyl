@@ -20,7 +20,8 @@ def record_swipe(
     if swipe.direction not in ("left", "right"):
         raise HTTPException(status_code=400, detail="direction must be 'left' or 'right'")
 
-    # Record the swipe — non-fatal if duplicate
+    # Record the swipe — non-fatal (RLS on swipes table may reject it)
+    swipe_warning = None
     try:
         supabase.table("swipes").upsert({
             "swiper_id": current_user.id,
@@ -28,11 +29,14 @@ def record_swipe(
             "direction": swipe.direction,
         }, on_conflict="swiper_id,item_id").execute()
     except Exception as e:
-        # Swipes table may not exist yet — still return success
-        return {"swiped": True, "matched": False, "warning": str(e)}
+        swipe_warning = str(e)
+        # For left swipes we just return — no conversation to create
+        if swipe.direction != "right":
+            return {"swiped": True, "matched": False, "warning": swipe_warning}
 
     if swipe.direction != "right":
         return {"swiped": True, "matched": False}
+
 
     # ── Right swipe: try to open a conversation ─────────────────────────────
     try:
@@ -51,25 +55,56 @@ def record_swipe(
         profile_resp = public_supabase.table("profiles").select("full_name, username").eq("id", current_user.id).single().execute()
         swiper_name = (profile_resp.data or {}).get("full_name") or (profile_resp.data or {}).get("username") or "Someone"
 
-        # Create/upsert conversation (canonical ordering: smaller uuid = user1)
+        # Create/get conversation (canonical ordering: smaller uuid = user1)
         u1 = min(current_user.id, owner_id)
         u2 = max(current_user.id, owner_id)
 
-        conv_resp = supabase.table("conversations").upsert({
-            "user1_id": u1,
-            "user2_id": u2,
-            "item_id": swipe.item_id,
-        }, on_conflict="user1_id,user2_id,item_id").execute()
+        # Step 1: Check if a conversation already exists for this pair+item
+        existing_resp = (
+            public_supabase.table("conversations")
+            .select("id")
+            .eq("user1_id", u1)
+            .eq("user2_id", u2)
+            .eq("item_id", swipe.item_id)
+            .limit(1)
+            .execute()
+        )
+        existing_rows = existing_resp.data or []
+        conversation_id = existing_rows[0].get("id") if existing_rows else None
 
-        conversation_id = (conv_resp.data or [{}])[0].get("id")
+        # Step 2: No existing conversation — create one
+        if not conversation_id:
+            insert_resp = (
+                public_supabase.table("conversations")
+                .insert({
+                    "user1_id": u1,
+                    "user2_id": u2,
+                    "item_id": swipe.item_id,
+                })
+                .execute()
+            )
+            conversation_id = (insert_resp.data or [{}])[0].get("id")
 
         if conversation_id:
             message_text = f"{swiper_name} is interested in your \"{item['title']}\""
-            supabase.table("messages").insert({
+            public_supabase.table("messages").insert({
                 "conversation_id": conversation_id,
                 "sender_id": current_user.id,
                 "content": message_text,
             }).execute()
+
+            # Increment unread counter for the item owner (User B) so they see a badge
+            # u1 = min(swiper, owner), u2 = max; determine which slot the owner occupies
+            owner_unread_field = "unread_user1" if owner_id == u1 else "unread_user2"
+            try:
+                conv_data = public_supabase.table("conversations").select(owner_unread_field).eq("id", conversation_id).single().execute()
+                current_unread = (conv_data.data or {}).get(owner_unread_field, 0) or 0
+                public_supabase.table("conversations").update({
+                    owner_unread_field: current_unread + 1,
+                    "last_message_at": "now()",
+                }).eq("id", conversation_id).execute()
+            except Exception:
+                pass  # Non-critical — chat still works without the badge
 
         return {"swiped": True, "matched": True, "conversation_id": conversation_id}
 

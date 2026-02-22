@@ -10,6 +10,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
 import { authenticatedFetch } from '../../lib/api';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -71,6 +73,21 @@ function MessageBubble({ msg, isMe }: { msg: any; isMe: boolean }) {
                         <Text style={b.proposalMeta}>{[m.item_brand, m.item_size, m.item_condition].filter(Boolean).join(' · ')}</Text>
                         <Text style={b.proposalSub}>{msg.content}</Text>
                     </View>
+                </View>
+                <Text style={[b.time, isMe ? b.timeMe : b.timeThem]}>
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {isMe && msg.read_at ? '  ✓✓' : isMe ? '  ✓' : ''}
+                </Text>
+            </View>
+        );
+    }
+
+    if (msg.type === 'image' && msg.metadata?.url) {
+        return (
+            <View style={[b.wrap, isMe ? b.wrapMe : b.wrapThem]}>
+                <View style={[b.bubble, isMe ? b.bubbleMe : b.bubbleThem, { padding: 4 }]}>
+                    <Image source={{ uri: msg.metadata.url }} style={{ width: 200, height: 250, borderRadius: 12 }} resizeMode="cover" />
+                    {msg.content ? <Text style={[b.text, isMe ? b.textMe : b.textThem, { marginTop: 4, marginHorizontal: 8, marginBottom: 4 }]}>{msg.content}</Text> : null}
                 </View>
                 <Text style={[b.time, isMe ? b.timeMe : b.timeThem]}>
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -248,10 +265,45 @@ export default function ChatScreen() {
                 method: 'POST',
                 body: JSON.stringify(body),
             });
+            await loadMessages(); // Force immediate update so the user sees it instantly
         } catch (e: any) {
             Alert.alert('Error', e.message);
         } finally {
             setSending(false);
+        }
+    }
+
+    async function pickImage() {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            quality: 0.7,
+        });
+
+        if (!result.canceled && result.assets[0]) {
+            setSending(true);
+            try {
+                const uri = result.assets[0].uri;
+                const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+                const ext = uri.split('.').pop() || 'jpg';
+                const fileName = `${myId}_${Date.now()}.${ext}`;
+
+                const { data, error } = await supabase.storage
+                    .from('chat')
+                    .upload(fileName, decodeURIComponent(escape(atob(base64))), {
+                        contentType: `image/${ext}`,
+                        upsert: false,
+                    });
+
+                if (error) throw error;
+                const { data: { publicUrl } } = supabase.storage.from('chat').getPublicUrl(data.path);
+
+                await sendMessage('📷 Image', 'image', { url: publicUrl });
+            } catch (e: any) {
+                Alert.alert('Upload failed', e.message);
+            } finally {
+                setSending(false);
+            }
         }
     }
 
@@ -412,6 +464,9 @@ export default function ChatScreen() {
 
                 {/* ── Input row ── */}
                 <View style={s.inputBar}>
+                    <TouchableOpacity style={s.wardrobeBtn} onPress={pickImage} disabled={sending}>
+                        <Ionicons name="image-outline" size={22} color={Colors.secondary.deepMaroon} />
+                    </TouchableOpacity>
                     <TouchableOpacity style={s.wardrobeBtn} onPress={() => setWardrobeOpen(true)}>
                         <Ionicons name="shirt-outline" size={22} color={Colors.secondary.deepMaroon} />
                     </TouchableOpacity>

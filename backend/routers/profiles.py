@@ -40,6 +40,7 @@ def update_my_profile(
     # id is required for upsert (creates row if first time)
     update_data["id"] = current_user.id
 
+    # supabase-py upsert returns data without explicitly chaining .select() in this version
     response = supabase.table("profiles").upsert(update_data).execute()
 
     if not response.data:
