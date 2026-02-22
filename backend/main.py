@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import items, swipes, profiles, wishlists, verify, conversations, reviews
+from routers import items, swipes, profiles, wishlists, verify, conversations, reviews, auth
 
 app = FastAPI(title="SwapStyl API", version="0.1.0")
 
@@ -19,6 +19,7 @@ app.include_router(wishlists.router)
 app.include_router(verify.router)
 app.include_router(conversations.router)
 app.include_router(reviews.router)
+app.include_router(auth.router)
 
 @app.get("/")
 def read_root():
