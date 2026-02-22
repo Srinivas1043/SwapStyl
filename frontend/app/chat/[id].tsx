@@ -347,10 +347,14 @@ export default function ChatScreen() {
 
         if (status === 'completed') {
             return (
-                <View style={[da.btn, da.completedBtn]}>
-                    <Ionicons name="ribbon" size={16} color="#fff" />
-                    <Text style={da.btnText}>Swap Complete 🎉</Text>
-                </View>
+                <TouchableOpacity
+                    style={[da.btn, da.completedBtn]}
+                    activeOpacity={0.8}
+                    onPress={() => router.push(`/review/${id}?reviewee_id=${other?.id}&item_title=${encodeURIComponent(item?.title || '')}`)}
+                >
+                    <Ionicons name="star" size={16} color="#fff" />
+                    <Text style={da.btnText}>Leave a Review</Text>
+                </TouchableOpacity>
             );
         }
         if (status === 'cancelled') {
@@ -407,7 +411,11 @@ export default function ChatScreen() {
 
     return (
         <SafeAreaView style={s.safe} edges={['top']}>
-            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}>
+            <KeyboardAvoidingView
+                style={s.safe}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+            >
 
                 {/* ── Header ── */}
                 <View style={s.header}>

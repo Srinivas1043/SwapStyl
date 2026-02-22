@@ -263,6 +263,33 @@ def update_deal_status(
             update["status"] = "completed"
             update["completed_at"] = "now()"
             system_msg = "🎊 Swap completed! Both users confirmed the exchange."
+            
+            # --- Swap Side Effects (Bypass RLS) ---
+            admin_client = get_supabase()
+            try:
+                # 1. Update the original item and any proposed items to 'swapped'
+                items_to_swap = set([conv["item_id"]])
+                proposals = admin_client.table("messages").select("metadata").eq("conversation_id", conv_id).eq("type", "item_proposal").execute()
+                for p in (proposals.data or []):
+                    pid = p.get("metadata", {}).get("item_id")
+                    if pid:
+                        items_to_swap.add(pid)
+                
+                for iid in items_to_swap:
+                    admin_client.table("items").update({"status": "swapped"}).eq("id", iid).execute()
+
+                # 2. Grant 200 points to both users
+                user1 = admin_client.table("profiles").select("points").eq("id", conv["user1_id"]).single().execute()
+                user2 = admin_client.table("profiles").select("points").eq("id", conv["user2_id"]).single().execute()
+                
+                p1 = (user1.data.get("points") or 0) + 200 if user1.data else 200
+                p2 = (user2.data.get("points") or 0) + 200 if user2.data else 200
+                
+                admin_client.table("profiles").update({"points": p1}).eq("id", conv["user1_id"]).execute()
+                admin_client.table("profiles").update({"points": p2}).eq("id", conv["user2_id"]).execute()
+            except Exception as e:
+                print(f"Error processing swap side-effects {conv_id}: {e}")
+
         else:
             system_msg = "✅ You marked this swap as complete. Waiting for the other party to confirm…"
 

@@ -8,6 +8,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { authenticatedFetch } from '../../lib/api';
+import { supabase } from '../../lib/supabase';
 
 const DEAL_COLORS: Record<string, string> = {
     interested: '#8B6000',
@@ -41,6 +42,20 @@ export default function ChatsScreen() {
 
     useFocusEffect(useCallback(() => {
         load();
+
+        const channel = supabase
+            .channel('chats_inbox')
+            .on('postgres_changes', {
+                event: '*', schema: 'public', table: 'conversations'
+            }, () => {
+                // When any conversation we are part of updates, reload the list to get new messages/status
+                load();
+            })
+            .subscribe();
+
+        return () => {
+            channel.unsubscribe();
+        };
     }, []));
 
     async function load() {

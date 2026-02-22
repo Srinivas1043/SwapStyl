@@ -71,14 +71,14 @@ export default function ProfileScreen() {
 
     const stats = [
         { label: 'Items Swapped', value: profile?.items_swapped ?? 0 },
+        { label: 'Points', value: profile?.points ?? 0 },
         { label: 'Items Listed', value: profile?.items_listed ?? 0 },
-        { label: 'Wishlist', value: profile?.wishlist_count ?? 0 },
     ];
 
     const menuItems = [
-        { icon: ICONS.swapHistory, label: 'Swap History' },
-        { icon: ICONS.reviews, label: 'Reviews' },
-        { icon: ICONS.settings, label: 'Settings' },
+        { icon: ICONS.swapHistory, label: 'Swap History', route: '/history' },
+        { icon: ICONS.reviews, label: 'Reviews', route: '/reviews/me' },
+        { icon: ICONS.settings, label: 'Settings', route: '/settings' },
     ];
 
     return (
@@ -186,6 +186,11 @@ export default function ProfileScreen() {
                                             <Text style={styles.pendingBadgeText}>⏳ Review</Text>
                                         </View>
                                     )}
+                                    {item.status === 'swapped' && (
+                                        <View style={styles.swappedBadge}>
+                                            <Text style={styles.swappedBadgeText}>✅ Swapped</Text>
+                                        </View>
+                                    )}
                                     <View style={styles.wardrobeCardOverlay}>
                                         <Text style={styles.wardrobeCardTitle} numberOfLines={1}>
                                             {item.title}
@@ -207,6 +212,7 @@ export default function ProfileScreen() {
                                 idx < menuItems.length - 1 && styles.menuItemBorder,
                             ]}
                             activeOpacity={0.7}
+                            onPress={() => item.route && router.push(item.route as any)}
                         >
                             <Text style={styles.menuIcon}>{item.icon}</Text>
                             <Text style={styles.menuLabel}>{item.label}</Text>
@@ -436,6 +442,20 @@ const styles = StyleSheet.create({
         paddingVertical: 2,
     },
     pendingBadgeText: {
+        color: '#fff',
+        fontSize: 9,
+        fontWeight: '700',
+    },
+    swappedBadge: {
+        position: 'absolute',
+        top: 5,
+        left: 5,
+        backgroundColor: 'rgba(39, 174, 96, 0.85)', // forest green with opacity
+        borderRadius: 8,
+        paddingHorizontal: 5,
+        paddingVertical: 2,
+    },
+    swappedBadgeText: {
         color: '#fff',
         fontSize: 9,
         fontWeight: '700',
