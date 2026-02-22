@@ -11,9 +11,9 @@ const getBackendUrl = () => {
     return `http://${host}:8000`;
 };
 
-export const API_URL = getBackendUrl();
+// export const API_URL = getBackendUrl();
 
-// export const API_URL = 'https://swapstyl-api.onrender.com';
+export const API_URL = 'https://swapstyl-api.onrender.com';
 
 
 export const authenticatedFetch = async (endpoint: string, options: RequestInit = {}) => {
