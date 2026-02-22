@@ -1,0 +1,33 @@
+# Node modules (will be reinstalled by EAS)
+node_modules/
+
+# Build outputs and cache
+dist/
+.expo/
+web-build/
+.metro-health-check*
+
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# OS files
+.DS_Store
+**/.DS_Store
+
+# Environment files
+.env.local
+.env*.local
+
+# Python cache (if any)
+__pycache__/
+*.pyc
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Temporary files
+*.tmp
+*.temp
