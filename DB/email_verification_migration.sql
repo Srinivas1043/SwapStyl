@@ -158,17 +158,29 @@ RETURNS jsonb LANGUAGE sql SECURITY DEFINER AS $$
 $$;
 
 -- Helper to mark reset as completed
-CREATE OR REPLACE FUNCTION mark_password_reset_completed(user_id uuid)
-RETURNS jsonb LANGUAGE sql SECURITY DEFINER AS $$
+CREATE OR REPLACE FUNCTION mark_password_reset_completed(target_user_id uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE
+  result jsonb;
+BEGIN
+  WITH latest_attempt AS (
+    SELECT id
+    FROM public.password_reset_attempts
+    WHERE user_id = target_user_id 
+      AND reset_completed_at IS NULL
+    ORDER BY requested_at DESC
+    LIMIT 1
+  )
   UPDATE public.password_reset_attempts
   SET reset_completed_at = timezone('utc'::text, now())
-  WHERE user_id = user_id AND reset_completed_at IS NULL
-  ORDER BY requested_at DESC
-  LIMIT 1
+  WHERE id = (SELECT id FROM latest_attempt)
   RETURNING jsonb_build_object(
     'completed', true,
     'timestamp', reset_completed_at
-  );
+  ) INTO result;
+  
+  RETURN result;
+END;
 $$;
 
 -- ─────────────────────────────────────────────────────────────────
