@@ -37,7 +37,10 @@ def add_to_wishlist(
     }, on_conflict="user_id,item_id").execute()
 
     # Increment wishlist_count on the user's profile
-    supabase.rpc("increment_wishlist_count", {"uid": current_user.id}).execute()
+    # We use the service client here because the RPC function might not be exposed to the anon role
+    from dependencies import get_supabase
+    service_client = get_supabase()
+    service_client.rpc("increment_wishlist_count", {"uid": current_user.id}).execute()
 
     return resp.data[0] if resp.data else {"saved": True}
 
@@ -51,7 +54,9 @@ def remove_from_wishlist(
     supabase.table("wishlists").delete().eq("user_id", current_user.id).eq("item_id", item_id).execute()
 
     # Decrement wishlist_count (floor at 0)
-    supabase.rpc("decrement_wishlist_count", {"uid": current_user.id}).execute()
+    from dependencies import get_supabase
+    service_client = get_supabase()
+    service_client.rpc("decrement_wishlist_count", {"uid": current_user.id}).execute()
 
     return {"removed": True}
 
