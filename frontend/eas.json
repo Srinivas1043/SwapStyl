@@ -13,6 +13,11 @@
       "android": {
         "buildType": "apk"
       },
+      "env": {
+        "EAS_RESTORE_CACHE": "0",
+        "EAS_BUILD_DISABLE_NPM_CACHE": "1",
+        "EAS_BUILD_DISABLE_MAVEN_CACHE": "1"
+      },
       "ios": {
         "simulator": false,
         "buildConfiguration": "Release"
