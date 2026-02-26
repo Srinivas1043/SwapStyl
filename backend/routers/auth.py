@@ -223,9 +223,8 @@ async def admin_signup(request: SignupRequest):
             profile_role = "admin" if is_first_admin else None
             supabase.table("profiles").insert({
                 "id": user_id,
-                "email": request.email,
                 "role": profile_role,
-                "created_at": datetime.utcnow().isoformat()
+                "role_updated_at": datetime.utcnow().isoformat()
             }).execute()
             
             message = (
