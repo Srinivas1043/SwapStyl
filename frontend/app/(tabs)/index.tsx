@@ -94,6 +94,8 @@ function SwipeCard({
             .start(dir === 'right' ? onSwipeRight : onSwipeLeft);
     };
 
+    if (!item) return null; // Safety check
+
     const mainImage = item.images?.[0] || 'https://via.placeholder.com/400x600?text=No+Image';
 
     return (
@@ -273,6 +275,10 @@ function FilterPanel({ visible, filters, onChange, onApply, onClose }: {
 // ─── Item Detail Sheet ─────────────────────────────────────────────────────────
 function ItemDetailSheet({ item, visible, onClose }: { item: Item | null; visible: boolean; onClose: () => void; }) {
     if (!item) return null;
+    
+    // Ensure item.images is an array to prevent errors
+    const images = Array.isArray(item.images) ? item.images : [];
+
     return (
         <Modal visible={visible} animationType="slide" transparent presentationStyle="overFullScreen">
             <View style={ds.overlay}>
@@ -280,9 +286,9 @@ function ItemDetailSheet({ item, visible, onClose }: { item: Item | null; visibl
                     <View style={ds.dragHandle} />
                     <ScrollView showsVerticalScrollIndicator={false}>
                         {/* Gallery */}
-                        {item.images?.length > 0 && (
+                        {images.length > 0 && (
                             <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
-                                {item.images.map((uri, i) => (
+                                {images.map((uri, i) => (
                                     <Image key={i} source={{ uri }} style={ds.galleryImage} resizeMode="cover" />
                                 ))}
                             </ScrollView>

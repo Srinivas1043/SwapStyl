@@ -54,6 +54,7 @@ export default function UploadScreen() {
 
     // Photos — array of local URIs (null = empty slot)
     const [photos, setPhotos] = useState<(string | null)[]>(Array(PHOTO_SLOTS.length).fill(null));
+    const [loadingImages, setLoadingImages] = useState<boolean[]>(Array(PHOTO_SLOTS.length).fill(false));
 
     // Form fields
     const [title, setTitle] = useState('');
@@ -81,15 +82,30 @@ export default function UploadScreen() {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
+            mediaTypes: 'images',
             allowsEditing: true,
-            quality: 0.75,
+            aspect: [4, 3],
         });
 
         if (!result.canceled && result.assets[0]) {
+            const uri = result.assets[0].uri;
+            console.log(`Image selected at index ${index}:`, uri);
+            console.log(`Asset details:`, result.assets[0]);
+            
+            if (!uri) {
+                console.error('No URI in asset!');
+                return;
+            }
+            
             const newPhotos = [...photos];
-            newPhotos[index] = result.assets[0].uri;
+            newPhotos[index] = uri;
             setPhotos(newPhotos);
+
+            const newLoading = [...loadingImages];
+            newLoading[index] = true;
+            setLoadingImages(newLoading);
+            
+            console.log(`Updated photos:`, newPhotos[index]);
         }
     };
 
@@ -97,6 +113,10 @@ export default function UploadScreen() {
         const newPhotos = [...photos];
         newPhotos[index] = null;
         setPhotos(newPhotos);
+        
+        const newLoading = [...loadingImages];
+        newLoading[index] = false;
+        setLoadingImages(newLoading);
     };
 
     // ─── Upload image to Supabase Storage ──────────────────────────────────
@@ -238,13 +258,47 @@ export default function UploadScreen() {
                     <View style={st.photoSection}>
                         <View style={st.photoGrid}>
                             {PHOTO_SLOTS.map((slot, i) => (
-                                <View key={i} style={st.photoSlotWrapper}>
+                                <View key={`photo-${i}-${photos[i]}`} style={st.photoSlotWrapper}>
                                     {photos[i] ? (
                                         <TouchableOpacity style={st.photoSlot} onPress={() => pickPhoto(i)} activeOpacity={0.9}>
-                                            <Image source={{ uri: photos[i]! }} style={[StyleSheet.absoluteFill, { borderRadius: 12 }]} resizeMode="cover" />
-                                            <TouchableOpacity style={st.photoRemove} onPress={() => removePhoto(i)}>
-                                                <Ionicons name="close-circle" size={20} color="#fff" />
-                                            </TouchableOpacity>
+                                            <Image 
+                                                key={`image-${i}-${photos[i]}`}
+                                                source={{ uri: photos[i] }} 
+                                                style={[StyleSheet.absoluteFill, { borderRadius: 12 }]} 
+                                                resizeMode="cover"
+                                                onLoadStart={() => {
+                                                    console.log(`Image ${i} loading started`);
+                                                }}
+                                                onLoad={() => {
+                                                    console.log(`Image ${i} loaded successfully`);
+                                                }}
+                                                onLoadEnd={() => {
+                                                    console.log(`Image ${i} load ended`);
+                                                    setLoadingImages(prev => {
+                                                        const fresh = [...prev];
+                                                        fresh[i] = false;
+                                                        return fresh;
+                                                    });
+                                                }}
+                                                onError={(error) => {
+                                                    console.error(`Image ${i} failed to load:`, error);
+                                                    setLoadingImages(prev => {
+                                                        const fresh = [...prev];
+                                                        fresh[i] = false;
+                                                        return fresh;
+                                                    });
+                                                }}
+                                            />
+                                            {loadingImages[i] && (
+                                                <View style={[StyleSheet.absoluteFill, st.loadingOverlay]}>
+                                                    <ActivityIndicator size="small" color={Colors.primary.forestGreen} />
+                                                </View>
+                                            )}
+                                            {!loadingImages[i] && photos[i] && (
+                                                <TouchableOpacity style={st.photoRemove} onPress={() => removePhoto(i)} hitSlop={8}>
+                                                    <Ionicons name="close-circle" size={24} color="#fff" />
+                                                </TouchableOpacity>
+                                            )}
                                         </TouchableOpacity>
                                     ) : (
                                         <TouchableOpacity style={[st.photoSlot, st.photoSlotEmpty]} onPress={() => pickPhoto(i)} activeOpacity={0.7}>
@@ -377,4 +431,11 @@ const st = StyleSheet.create({
     publishDisabled: { opacity: 0.7 },
     publishLoading: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     publishText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+    loadingOverlay: {
+        backgroundColor: 'rgba(255,255,255,0.7)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 12,
+        zIndex: 10,
+    },
 });
