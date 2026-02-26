@@ -6,12 +6,16 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Session } from '@supabase/supabase-js';
+import i18n from '../lib/i18n';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LanguageProvider, useLanguage } from '../context/LanguageContext';
 
-export default function RootLayout() {
+function AppLayout() {
     const [session, setSession] = useState<Session | null>(null);
     const [initialized, setInitialized] = useState(false);
     const router = useRouter();
     const segments = useSegments();
+    const { locale, isLoading: isLanguageLoading } = useLanguage();
 
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -22,7 +26,7 @@ export default function RootLayout() {
     }, []);
 
     useEffect(() => {
-        if (!initialized) return;
+        if (!initialized || isLanguageLoading) return;
 
         const inAuthGroup = segments[0] === '(auth)';
         const inOnboarding = segments[0] === 'onboarding'; 
@@ -35,9 +39,9 @@ export default function RootLayout() {
             // Also explicitly close any open modals/stacks if needed
             router.replace('/(auth)/login');
         }
-    }, [session, initialized, segments]);
+    }, [session, initialized, segments, isLanguageLoading]);
 
-    if (!initialized) {
+    if (!initialized || isLanguageLoading) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <ActivityIndicator size="large" color={Colors.primary.forestGreen} />
@@ -47,7 +51,8 @@ export default function RootLayout() {
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <Stack screenOptions={{ headerShown: false }}>
+            {/* Pass the locale as a key to force re-render of the entire navigation stack when language changes */}
+            <Stack key={locale} screenOptions={{ headerShown: false }}> 
                 <Stack.Screen name="(auth)" />
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="index" />
@@ -55,5 +60,13 @@ export default function RootLayout() {
             </Stack>
             <StatusBar style="dark" />
         </GestureHandlerRootView>
+    );
+}
+
+export default function RootLayout() {
+    return (
+        <LanguageProvider>
+            <AppLayout />
+        </LanguageProvider>
     );
 }

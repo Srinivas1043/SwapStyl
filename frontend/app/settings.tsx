@@ -6,23 +6,14 @@ import { Colors } from '../constants/Colors';
 import { useState, useEffect } from 'react';
 import i18n from '../lib/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function SettingsScreen() {
     const router = useRouter();
     const [notifications, setNotifications] = useState(true);
     const [matchAlerts, setMatchAlerts] = useState(true);
     const [promotions, setPromotions] = useState(false);
-    const [locale, setLocale] = useState(i18n.locale);
-
-    useEffect(() => {
-        // Load saved language on mount
-        AsyncStorage.getItem('user-language').then(lang => {
-           if (lang) {
-               i18n.locale = lang;
-               setLocale(lang);
-           }
-        });
-    }, []);
+    const { locale, setLocale } = useLanguage();
 
     const changeLanguage = () => {
         const options = ['English', 'Nederlands', 'Italiano', 'Cancel'];
@@ -49,27 +40,34 @@ export default function SettingsScreen() {
         }
     };
 
-    const applyLanguage = async (lang: string) => {
-        i18n.locale = lang;
+    const applyLanguage = (lang: string) => {
         setLocale(lang);
-        await AsyncStorage.setItem('user-language', lang);
-        // Force re-render of current screen only - for full app reload, context is better or restart
-        router.replace('/settings'); 
+    };
+
+    const getCurrentLanguageLabel = () => {
+        switch(locale) {
+            case 'en': return 'English';
+            case 'nl': return 'Nederlands';
+            case 'it': return 'Italiano';
+            default: return 'English';
+        }
     };
 
     const sections = [
         {
-            title: 'General',
+            title: i18n.t('settings'),
             items: [
                 { 
-                    label: 'Language', 
-                    value: locale === 'en' ? 'English' : locale === 'nl' ? 'Nederlands' : 'Italiano', 
+                    label: i18n.t('language') || 'Language', 
+                    value: getCurrentLanguageLabel(),
                     toggle: false, 
                     arrow: true,
                     onPress: changeLanguage 
                 },
             ],
         },
+        // ... (rest of sections need i18n check)
+
         {
             title: 'Notifications',
             items: [

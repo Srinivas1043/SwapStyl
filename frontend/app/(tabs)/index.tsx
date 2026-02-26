@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { authenticatedFetch } from '../../lib/api';
 import StatusBanner, { friendlyError } from '../../components/StatusBanner';
+import i18n from '../../lib/i18n';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const CARD_W = SCREEN_W - 32;
@@ -184,16 +185,16 @@ function FilterPanel({ visible, filters, onChange, onApply, onClose }: {
                     {/* Header */}
                     <View style={fp.header}>
                         <TouchableOpacity onPress={onClose}><Ionicons name="close" size={24} color={Colors.secondary.deepMaroon} /></TouchableOpacity>
-                        <Text style={fp.title}>Narrow your search</Text>
+                        <Text style={fp.title}>{i18n.t('filters')}</Text>
                         <TouchableOpacity onPress={() => { Object.keys(DEFAULT_FILTERS).forEach(k => onChange(k as keyof Filters, '')); }}>
-                            <Text style={fp.resetText}>Reset</Text>
+                            <Text style={fp.resetText}>{i18n.t('reset')}</Text>
                         </TouchableOpacity>
                     </View>
 
                     <ScrollView showsVerticalScrollIndicator={false}>
                         {/* Radius */}
                         <View style={fp.section}>
-                            <Text style={fp.sectionLabel}>Search Radius (km)</Text>
+                            <Text style={fp.sectionLabel}>{i18n.t('searchRadius')}</Text>
                             <TextInput
                                 style={fp.textInput}
                                 value={filters.radius_km}
@@ -206,11 +207,11 @@ function FilterPanel({ visible, filters, onChange, onApply, onClose }: {
 
                         {/* Dropdown filters — each shows a simple picker-style list when value empty */}
                         {[
-                            { label: 'Sort By', field: 'sort' as keyof Filters, options: SORT_OPTIONS },
-                            { label: 'Category', field: 'category' as keyof Filters, options: CATEGORY_OPTIONS },
-                            { label: 'Gender', field: 'gender' as keyof Filters, options: GENDER_OPTIONS },
-                            { label: 'Size', field: 'size' as keyof Filters, options: SIZE_OPTIONS },
-                            { label: 'Condition', field: 'condition' as keyof Filters, options: CONDITION_OPTIONS },
+                            { label: i18n.t('sortBy'), field: 'sort' as keyof Filters, options: SORT_OPTIONS },
+                            { label: i18n.t('category'), field: 'category' as keyof Filters, options: CATEGORY_OPTIONS },
+                            { label: i18n.t('gender'), field: 'gender' as keyof Filters, options: GENDER_OPTIONS },
+                            { label: i18n.t('size'), field: 'size' as keyof Filters, options: SIZE_OPTIONS },
+                            { label: i18n.t('condition'), field: 'condition' as keyof Filters, options: CONDITION_OPTIONS },
                         ].map(({ label, field, options }) => (
                             <View key={field}>
                                 <Text style={fp.subsectionLabel}>{label}</Text>
@@ -230,8 +231,8 @@ function FilterPanel({ visible, filters, onChange, onApply, onClose }: {
 
                         {/* Free text filters */}
                         {[
-                            { label: 'Colour', field: 'color' as keyof Filters, placeholder: 'e.g. Black' },
-                            { label: 'Brand', field: 'brand' as keyof Filters, placeholder: 'e.g. H&M' },
+                            { label: i18n.t('color'), field: 'color' as keyof Filters, placeholder: 'e.g. Black' },
+                            { label: i18n.t('brand'), field: 'brand' as keyof Filters, placeholder: 'e.g. H&M' },
                         ].map(({ label, field, placeholder }) => (
                             <View key={field} style={fp.section}>
                                 <Text style={fp.sectionLabel}>{label}</Text>
@@ -249,7 +250,7 @@ function FilterPanel({ visible, filters, onChange, onApply, onClose }: {
                     </ScrollView>
 
                     <TouchableOpacity style={fp.applyBtn} onPress={onApply}>
-                        <Text style={fp.applyText}>Apply Filters</Text>
+                        <Text style={fp.applyText}>{i18n.t('applyFilters')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -306,7 +307,7 @@ function ItemDetailSheet({ item, visible, onClose }: { item: Item | null; visibl
                             {/* About */}
                             {item.description ? (
                                 <>
-                                    <Text style={ds.sectionTitle}>About</Text>
+                                    <Text style={ds.sectionTitle}>{i18n.t('about')}</Text>
                                     <Text style={ds.description}>{item.description}</Text>
                                 </>
                             ) : null}
@@ -337,6 +338,7 @@ export default function SwapScreen() {
     const [activeFiltersCount, setActiveFiltersCount] = useState(0);
     const [bannerMsg, setBannerMsg] = useState<string | null>(null);
     const router = useRouter();
+    const [locale, setLocale] = useState(i18n.locale); // Force render on lang change
 
     const fetchFeed = useCallback(async (f: Filters, p: number, replace = false) => {
         setLoading(true);
@@ -368,6 +370,7 @@ export default function SwapScreen() {
     }, []);
 
     useFocusEffect(useCallback(() => {
+        setLocale(i18n.locale); // Ensure we re-render with new language
         fetchFeed(filters, 1, true);
     }, []));
 
@@ -394,9 +397,9 @@ export default function SwapScreen() {
                 console.log('Right swipe — matched:', result?.matched, 'conv_id:', result?.conversation_id);
                 if (result?.conversation_id) {
                     Alert.alert(
-                        'Match! ✨',
-                        'You started a new conversation. Check your Chats tab to say hi!',
-                        [{ text: 'Keep Swiping', style: 'default' }]
+                        i18n.t('matchTitle'),
+                        i18n.t('matchMsg'),
+                        [{ text: i18n.t('keepSwiping'), style: 'default' }]
                     );
                 } else {
                     console.warn('Right swipe but no conversation_id returned:', JSON.stringify(result));
@@ -452,7 +455,7 @@ export default function SwapScreen() {
 
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.logo}>Swapstyl</Text>
+                <Text style={styles.logo}>SwapStyl</Text>
                 <TouchableOpacity style={styles.filterIconBtn} onPress={() => { setPendingFilters(filters); setFilterVisible(true); }}>
                     <Ionicons name="options-outline" size={24} color={Colors.secondary.deepMaroon} />
                     {activeFiltersCount > 0 && (
@@ -470,12 +473,10 @@ export default function SwapScreen() {
                 ) : items.length === 0 ? (
                     <View style={styles.centerMsg}>
                         <Ionicons name="shirt-outline" size={64} color={Colors.neutrals.gray} />
-                        <Text style={styles.emptyTitle}>No items yet</Text>
-                        <Text style={styles.emptySubtitle}>
-                            {'No available items to swap right now.\nMake sure others have published items,\nor adjust your filters.'}
-                        </Text>
+                        <Text style={styles.emptyTitle}>{i18n.t('noItems')}</Text>
+                        <Text style={styles.emptySubtitle}>{i18n.t('noItemsDesc')}</Text>
                         <TouchableOpacity style={styles.refreshBtn} onPress={() => fetchFeed(filters, 1, true)}>
-                            <Text style={styles.refreshBtnText}>Refresh</Text>
+                            <Text style={styles.refreshBtnText}>{i18n.t('refresh')}</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
