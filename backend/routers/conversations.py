@@ -41,7 +41,6 @@ def list_conversations(
         supabase.table("conversations")
         .select(
             "*, "
-            "item:item_id(id, title, images, brand, size, condition, status), "
             "user1:user1_id(id, full_name, username, avatar_url, location, rating), "
             "user2:user2_id(id, full_name, username, avatar_url, location, rating)"
         )
@@ -54,16 +53,21 @@ def list_conversations(
     # For each conversation, fetch last message + compute unread
     result = []
     for conv in convs:
-        # Last message
+        # Last message (includes metadata with item info)
         msg_resp = (
             supabase.table("messages")
-            .select("id, content, type, sender_id, created_at, is_deleted")
+            .select("id, content, type, sender_id, created_at, is_deleted, metadata")
             .eq("conversation_id", conv["id"])
             .order("created_at", desc=True)
             .limit(1)
             .execute()
         )
         last_msg = (msg_resp.data or [None])[0]
+        
+        # Extract item from last message metadata
+        item = None
+        if last_msg and last_msg.get("metadata"):
+            item = last_msg.get("metadata")
 
         # Determine "other" user
         other = conv["user2"] if conv["user1_id"] == uid else conv["user1"]
@@ -73,6 +77,7 @@ def list_conversations(
             **conv,
             "last_message": last_msg,
             "other_user": other,
+            "item": item,
             "my_unread": conv.get(my_unread_field, 0),
         })
 

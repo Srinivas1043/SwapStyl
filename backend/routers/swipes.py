@@ -89,23 +89,21 @@ def record_swipe(
                 pass
 
         if conversation_id:
-            # Send message
-            # If conversation existed, we are chatting about a NEW item in the SAME chat.
-            # Maybe we should clarify that in the message type or content.
-            # The original code sent a text message.
+            # Send message with item metadata (supports multiple items in same chat per user)
             message_text = f"I am interested in your item \"{item['title']}\""
-            
-            # We can use 'item_proposal' type if we want to show a card, 
-            # or just text. The frontend handles 'item_proposal' well.
-            # Let's stick to text for the automated message for now, but maybe enhance it? 
-            # The user requirement said "Image upload should be seen...". 
-            # It also said "Chat should be per person".
             
             public_supabase.table("messages").insert({
                 "conversation_id": conversation_id,
                 "sender_id": current_user.id,
                 "content": message_text,
-                "type": "text" 
+                "type": "item_proposal",
+                "metadata": {
+                    "item_id": item["id"],
+                    "item_title": item["title"],
+                    "item_image": item.get("images", [])[0] if item.get("images") else None,
+                    "item_brand": item.get("brand"),
+                    "item_size": item.get("size"),
+                }
             }).execute()
 
             # Increment unread counter for the item owner

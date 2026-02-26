@@ -76,7 +76,7 @@ export default function ChatsScreen() {
         const lastMsg = conv.last_message;
         const status = conv.status || 'interested';
         const unread = conv.my_unread || 0;
-        const itemData = conv.item;
+        const itemData = conv.item;  // Item metadata from last message
 
         const previewText = lastMsg
             ? (lastMsg.is_deleted ? 'Message removed'
@@ -91,10 +91,10 @@ export default function ChatsScreen() {
                 activeOpacity={0.75}
                 onPress={() => router.push(`/chat/${conv.id}`)}
             >
-                {/* Item thumbnail */}
+                {/* Item thumbnail from last message metadata */}
                 <View style={s.thumbWrapper}>
-                    {itemData?.images?.[0]
-                        ? <Image source={{ uri: itemData.images[0] }} style={s.thumb} resizeMode="cover" />
+                    {itemData?.item_image
+                        ? <Image source={{ uri: itemData.item_image }} style={s.thumb} resizeMode="cover" />
                         : <View style={[s.thumb, s.thumbFallback]}><Ionicons name="shirt-outline" size={18} color="#BBB" /></View>
                     }
                 </View>
