@@ -58,7 +58,7 @@ export default function SettingsScreen() {
             title: i18n.t('settings'),
             items: [
                 { 
-                    label: i18n.t('language') || 'Language', 
+                    label: i18n.t('language'), 
                     value: getCurrentLanguageLabel(),
                     toggle: false, 
                     arrow: true,
@@ -66,31 +66,29 @@ export default function SettingsScreen() {
                 },
             ],
         },
-        // ... (rest of sections need i18n check)
-
         {
-            title: 'Notifications',
+            title: i18n.t('notifications'),
             items: [
                 { label: 'Push Notifications', toggle: true, value: notifications, onToggle: setNotifications },
-                { label: 'Match Alerts', toggle: true, value: matchAlerts, onToggle: setMatchAlerts },
-                { label: 'Promotions & News', toggle: true, value: promotions, onToggle: setPromotions },
+                { label: i18n.t('matchAlerts'), toggle: true, value: matchAlerts, onToggle: setMatchAlerts },
+                { label: i18n.t('promotions'), toggle: true, value: promotions, onToggle: setPromotions },
             ],
         },
         {
-            title: 'About',
+            title: i18n.t('about'),
             items: [
-                { label: 'Version', value: '1.0.0 (Phase 1)', toggle: false },
-                { label: 'Privacy Policy', arrow: true, toggle: false, onPress: () => Alert.alert('Privacy Policy', 'Available at swapstyl.com/privacy') },
-                { label: 'Terms of Service', arrow: true, toggle: false, onPress: () => Alert.alert('Terms of Service', 'Available at swapstyl.com/terms') },
-                { label: 'Contact Support', arrow: true, toggle: false, onPress: () => Alert.alert('Contact', 'Email us at support@swapstyl.com') },
+                { label: i18n.t('version'), value: '1.0.0 (Phase 1)', toggle: false },
+                { label: i18n.t('privacy'), arrow: true, toggle: false, onPress: () => Alert.alert('Privacy Policy', 'Available at swapstyl.com/privacy') },
+                { label: i18n.t('terms'), arrow: true, toggle: false, onPress: () => Alert.alert('Terms of Service', 'Available at swapstyl.com/terms') },
+                { label: i18n.t('contact'), arrow: true, toggle: false, onPress: () => Alert.alert('Contact', 'Email us at support@swapstyl.com') },
             ],
         },
         {
-            title: '🌿 Sustainability',
+            title: `🌿 ${i18n.t('sustainability')}`,
             items: [
-                { label: 'Eco Points', value: 'Earn 10 pts per swap', toggle: false },
-                { label: 'Carbon Saved', value: 'Track via your swaps', toggle: false },
-                { label: 'Mission', arrow: true, toggle: false, onPress: () => Alert.alert('Our Mission', 'SwapStyl helps reduce fashion waste by connecting people who want to swap clothes — giving every garment a second life.') },
+                { label: i18n.t('ecoPoints'), value: 'Earn 10 pts per swap', toggle: false },
+                { label: i18n.t('carbonSaved'), value: 'Track via your swaps', toggle: false },
+                { label: i18n.t('mission'), arrow: true, toggle: false, onPress: () => Alert.alert('Our Mission', 'SwapStyl helps reduce fashion waste by connecting people who want to swap clothes — giving every garment a second life.') },
             ],
         },
     ];
