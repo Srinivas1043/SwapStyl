@@ -110,13 +110,21 @@ def get_dashboard(
     reports = supabase.table("reports").select("id", count="exact").eq("status", "open").execute()
     reports_count = reports.count or 0
 
-    # Suspended users
-    suspended = supabase.table("profiles").select("id", count="exact").neq("suspended_at", None).execute()
-    suspended_count = suspended.count or 0
+    # Suspended users (count where suspended_at IS NOT NULL)
+    try:
+        # Use is notation for NULL checks in PostgREST
+        suspended = supabase.table("profiles").select("id", count="exact").filter("suspended_at", "is", "not null").execute()
+        suspended_count = suspended.count or 0
+    except:
+        suspended_count = 0
 
-    # Total items
-    items = supabase.table("items").select("id", count="exact").eq("deleted_at", None).execute()
-    total_items = items.count or 0
+    # Total items (count where deleted_at IS NULL)
+    try:
+        # Count active items (not deleted)
+        items = supabase.table("items").select("id", count="exact").filter("deleted_at", "is", "null").execute()
+        total_items = items.count or 0
+    except:
+        total_items = 0
 
     # Total users
     users = supabase.table("profiles").select("id", count="exact").execute()

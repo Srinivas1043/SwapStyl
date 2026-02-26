@@ -3,10 +3,13 @@
 -- Run this migration in Supabase SQL Editor
 -- ─────────────────────────────────────────────────────────────────
 
+-- Drop existing role column if it's an ENUM type causing conflicts
+ALTER TABLE public.profiles DROP COLUMN IF EXISTS role CASCADE;
+
 -- Add role column for admin/moderator access control
 -- Use TEXT instead of ENUM for flexibility
 ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS role text DEFAULT NULL,
+  ADD COLUMN role text DEFAULT NULL,
   ADD COLUMN IF NOT EXISTS role_updated_at timestamp with time zone DEFAULT NULL;
 
 -- Add index for efficient role filtering
