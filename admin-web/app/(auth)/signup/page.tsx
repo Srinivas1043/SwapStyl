@@ -7,13 +7,6 @@ import styles from '../../signup.module.css';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-interface AdminUser {
-  id: string;
-  email: string;
-  role: string;
-  created_at: string;
-}
-
 export default function SignupPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
