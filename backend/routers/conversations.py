@@ -226,8 +226,8 @@ def send_message(
     conv = conv_resp.data
     if conv["user1_id"] != uid and conv["user2_id"] != uid:
         raise HTTPException(status_code=403)
-    if conv["status"] in ("completed", "cancelled"):
-        raise HTTPException(status_code=400, detail=f"Cannot message a {conv['status']} conversation")
+    # Removed status check - allow messaging even in completed/cancelled conversations
+    # This allows users to keep chatting and potentially share new items
 
     row = {
         "conversation_id": conv_id,
@@ -400,3 +400,53 @@ def get_user_wardrobe(
         .execute()
     )
     return resp.data or []
+
+
+@router.get("/{conv_id}/items")
+def get_conversation_items(
+    conv_id: str,
+    current_user=Depends(get_current_user),
+    supabase=Depends(get_authenticated_client),
+):
+    """Get all unique items being discussed in this conversation with their offer status."""
+    uid = current_user.id
+    
+    # Verify participant
+    conv_resp = supabase.table("conversations").select("user1_id, user2_id").eq("id", conv_id).single().execute()
+    if not conv_resp.data:
+        raise HTTPException(status_code=404)
+    conv = conv_resp.data
+    if conv["user1_id"] != uid and conv["user2_id"] != uid:
+        raise HTTPException(status_code=403)
+
+    # Get all messages with item metadata in this conversation
+    msg_resp = (
+        supabase.table("messages")
+        .select("metadata, created_at, sender_id")
+        .eq("conversation_id", conv_id)
+        .eq("type", "item_proposal")
+        .order("created_at", desc=False)
+        .execute()
+    )
+    messages = msg_resp.data or []
+
+    # Group unique items - dict by item_id to get latest message per item
+    items_dict = {}
+    for msg in messages:
+        if msg.get("metadata", {}).get("item_id"):
+            item_id = msg["metadata"]["item_id"]
+            if item_id not in items_dict or msg["created_at"] > items_dict[item_id]["latest_message_at"]:
+                items_dict[item_id] = {
+                    "item_id": item_id,
+                    "item_title": msg["metadata"].get("item_title"),
+                    "item_image": msg["metadata"].get("item_image"),
+                    "item_brand": msg["metadata"].get("item_brand"),
+                    "item_size": msg["metadata"].get("item_size"),
+                    "first_proposer_id": messages[0]["sender_id"] if messages else None,
+                    "latest_message_at": msg["created_at"],
+                }
+
+    return {
+        "items": list(items_dict.values()),
+        "total": len(items_dict),
+    }

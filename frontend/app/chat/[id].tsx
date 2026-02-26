@@ -196,6 +196,7 @@ export default function ChatScreen() {
 
     const [conv, setConv] = useState<any>(null);
     const [messages, setMessages] = useState<any[]>([]);
+    const [conversationItems, setConversationItems] = useState<any[]>([]);
     const [text, setText] = useState('');
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
@@ -215,7 +216,7 @@ export default function ChatScreen() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         setMyId(user.id);
-        await Promise.all([loadConv(user.id), loadMessages()]);
+        await Promise.all([loadConv(user.id), loadMessages(), loadConversationItems()]);
         subscribeRealtime(user.id);
         setLoading(false);
     }
@@ -231,6 +232,13 @@ export default function ChatScreen() {
         try {
             const data = await authenticatedFetch(`/conversations/${id}/messages?page_size=60`);
             setMessages(data.messages || []);
+        } catch (e) { console.error(e); }
+    }
+
+    async function loadConversationItems() {
+        try {
+            const data = await authenticatedFetch(`/conversations/${id}/items`);
+            setConversationItems(data?.items || []);
         } catch (e) { console.error(e); }
     }
 
@@ -471,6 +479,24 @@ export default function ChatScreen() {
                     <DealActionButton />
                 </View>
 
+                {/* ── Products/Items in conversation ── */}
+                {conversationItems.length > 0 && (
+                    <View style={s.productsBar}>
+                        <Text style={s.productsTitle}>Items Being Discussed</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.productsList}>
+                            {conversationItems.map((item: any) => (
+                                <View key={item.item_id} style={s.productCard}>
+                                    {item.item_image && (
+                                        <Image source={{ uri: item.item_image }} style={s.productImg} resizeMode="cover" />
+                                    )}
+                                    <Text style={s.productTitle} numberOfLines={2}>{item.item_title}</Text>
+                                    <Text style={s.productMeta}>{[item.item_brand, item.item_size].filter(Boolean).join(' · ')}</Text>
+                                </View>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
+
                 {/* ── Messages ── */}
                 <FlatList
                     ref={flatRef}
@@ -561,6 +587,20 @@ const s = StyleSheet.create({
     },
     itemPillImg: { width: 24, height: 24, borderRadius: 5 },
     itemPillText: { fontSize: 12, fontWeight: '600', color: Colors.secondary.deepMaroon, maxWidth: SCREEN_W - 140 },
+
+    productsBar: {
+        backgroundColor: '#fff', paddingHorizontal: 12,
+        paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#EDEDEA',
+    },
+    productsTitle: { fontSize: 13, fontWeight: '700', color: Colors.secondary.deepMaroon, marginBottom: 8 },
+    productsList: { flex: undefined },
+    productCard: {
+        width: 100, marginRight: 10, backgroundColor: '#F5F3EF',
+        borderRadius: 8, overflow: 'hidden',
+    },
+    productImg: { width: 100, height: 100 },
+    productTitle: { fontSize: 11, fontWeight: '600', color: Colors.secondary.deepMaroon, paddingHorizontal: 6, paddingTop: 6 },
+    productMeta: { fontSize: 9, color: '#888', paddingHorizontal: 6, paddingBottom: 6 },
 
     messageList: { paddingHorizontal: 12, paddingVertical: 12, gap: 4 },
 
