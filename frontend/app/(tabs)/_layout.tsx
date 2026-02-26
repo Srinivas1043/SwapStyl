@@ -1,8 +1,12 @@
 import { Tabs } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import i18n from '../../lib/i18n';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function TabLayout() {
+    const { locale } = useLanguage();
+
     return (
         <Tabs
             screenOptions={{
@@ -19,7 +23,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: 'Swaps',
+                    title: i18n.t('home') || 'Swaps',
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="swap-horizontal" size={size} color={color} />
                     ),
@@ -28,7 +32,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="upload"
                 options={{
-                    title: 'Upload',
+                    title: i18n.t('upload') || 'Upload',
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="add-circle" size={size} color={color} />
                     ),
@@ -37,7 +41,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="chats"
                 options={{
-                    title: 'Chats',
+                    title: i18n.t('chat') || 'Chats',
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="chatbubbles" size={size} color={color} />
                     ),
@@ -46,7 +50,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="profile"
                 options={{
-                    title: 'Profile',
+                    title: i18n.t('profile') || 'Profile',
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="person" size={size} color={color} />
                     ),

@@ -1,12 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, Dimensions } from 'react-native';
-import { PanGestureHandler } from 'react-native-gesture-handler';
-import Animated, {
-    useAnimatedGestureHandler,
-    useAnimatedStyle,
-    withSpring,
-    runOnJS,
-} from 'react-native-reanimated';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, Image, Dimensions, Animated, PanResponder } from 'react-native';
 import { Colors } from '../constants/Colors';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -19,45 +12,73 @@ interface SwipeCardProps {
 }
 
 export default function SwipeCard({ item, onSwipeLeft, onSwipeRight }: SwipeCardProps) {
-    const translateX = Animated.useSharedValue(0);
+    const position = useRef(new Animated.ValueXY()).current;
 
-    const gestureHandler = useAnimatedGestureHandler({
-        onStart: (_, ctx: any) => {
-            ctx.startX = translateX.value;
-        },
-        onActive: (event, ctx) => {
-            translateX.value = ctx.startX + event.translationX;
-        },
-        onEnd: (event) => {
-            if (event.translationX > SWIPE_THRESHOLD) {
-                translateX.value = withSpring(SCREEN_WIDTH + 100);
-                runOnJS(onSwipeRight)();
-            } else if (event.translationX < -SWIPE_THRESHOLD) {
-                translateX.value = withSpring(-SCREEN_WIDTH - 100);
-                runOnJS(onSwipeLeft)();
-            } else {
-                translateX.value = withSpring(0);
-            }
-        },
-    });
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onPanResponderMove: (_, gesture) => {
+                position.setValue({ x: gesture.dx, y: gesture.dy });
+            },
+            onPanResponderRelease: (_, gesture) => {
+                if (gesture.dx > SWIPE_THRESHOLD) {
+                    forceSwipe('right');
+                } else if (gesture.dx < -SWIPE_THRESHOLD) {
+                    forceSwipe('left');
+                } else {
+                    resetPosition();
+                }
+            },
+        })
+    ).current;
 
-    const animatedStyle = useAnimatedStyle(() => {
+    const forceSwipe = (direction: 'left' | 'right') => {
+        const x = direction === 'right' ? SCREEN_WIDTH + 100 : -SCREEN_WIDTH - 100;
+        Animated.timing(position, {
+            toValue: { x, y: 0 },
+            duration: 250,
+            useNativeDriver: false,
+        }).start(() => onSwipeComplete(direction));
+    };
+
+    const onSwipeComplete = (direction: 'left' | 'right') => {
+        // Actually props are available in scope.
+        direction === 'right' ? onSwipeRight() : onSwipeLeft();
+        // Reset position not strictly needed if component unmounts, but good practice if recycled
+        // position.setValue({ x: 0, y: 0 }); 
+    };
+
+    const resetPosition = () => {
+        Animated.spring(position, {
+            toValue: { x: 0, y: 0 },
+            useNativeDriver: false,
+        }).start();
+    };
+
+    const getCardStyle = () => {
+        const rotate = position.x.interpolate({
+            inputRange: [-SCREEN_WIDTH * 1.5, 0, SCREEN_WIDTH * 1.5],
+            outputRange: ['-120deg', '0deg', '120deg'],
+        });
+
         return {
-            transform: [{ translateX: translateX.value }],
+            ...position.getLayout(),
+            transform: [{ rotate }],
         };
-    });
+    };
 
     return (
-        <PanGestureHandler onGestureEvent={gestureHandler}>
-            <Animated.View style={[styles.card, animatedStyle]}>
-                <Image source={{ uri: item.image }} style={styles.image} />
-                <View style={styles.infoContainer}>
-                    <Text style={styles.title}>{item.title}</Text>
-                    <Text style={styles.brand}>{item.brand}</Text>
-                    <Text style={styles.details}>{item.size} • {item.condition}</Text>
-                </View>
-            </Animated.View>
-        </PanGestureHandler>
+        <Animated.View
+            style={[styles.card, getCardStyle()]}
+            {...panResponder.panHandlers}
+        >
+            <Image source={{ uri: item.image }} style={styles.image} />
+            <View style={styles.infoContainer}>
+                <Text style={styles.title}>{item.title}</Text>
+                <Text style={styles.brand}>{item.brand}</Text>
+                <Text style={styles.details}>{item.size} • {item.condition}</Text>
+            </View>
+        </Animated.View>
     );
 }
 

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "frontend",
+    "name": "SwapStyl",
     "scheme": "swapstyl",
     "slug": "frontend",
     "version": "1.0.0",
@@ -14,20 +14,35 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.srinivas1043.frontend",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.srinivas1043.frontend"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
-    ]
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "expo-localization"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ae0bfa08-022b-4a6e-80c6-f85bb12debec"
+      }
+    },
+    "owner": "srinivas1043"
   }
 }
