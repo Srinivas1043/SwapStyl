@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiCall } from '@/lib/api';
-import styles from './reports.module.css';
+import styles from './page.module.css';
 
 interface Report {
   id: string;
