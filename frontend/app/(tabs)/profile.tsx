@@ -17,6 +17,7 @@ import { useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { authenticatedFetch } from '../../lib/api';
 import StatusBanner, { friendlyError } from '../../components/StatusBanner';
+import i18n from '../../lib/i18n';
 
 const ICONS = {
     swapHistory: '↺',
@@ -52,12 +53,12 @@ export default function ProfileScreen() {
 
     async function signOut() {
         Alert.alert(
-            'Log out',
+            i18n.t('logout') || 'Log out',
             'Are you sure you want to log out?',
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
-                    text: 'Log out',
+                    text: i18n.t('logout') || 'Log out',
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -83,17 +84,17 @@ export default function ProfileScreen() {
 
     const stats = [
         { label: 'Items Swapped', value: profile?.items_swapped ?? 0 },
-        { label: '🌿 Eco Points', value: profile?.eco_points ?? 0 },
-        { label: 'Wishlist', value: profile?.wishlist_count ?? 0 },
+        { label: i18n.t('ecoPoints'), value: profile?.eco_points ?? 0 },
+        { label: i18n.t('wishlist'), value: profile?.wishlist_count ?? 0 },
         { label: 'Items Listed', value: profile?.items_listed ?? 0 },
     ];
 
     const menuItems = [
-        { icon: '👕', label: 'My Wardrobe', route: '/wardrobe' },
+        { icon: '👕', label: i18n.t('myWardrobe'), route: '/wardrobe' },
         { icon: '♡', label: 'My Wishlist', route: '/wishlists' },
-        { icon: ICONS.swapHistory, label: 'Swap History', route: '/history' },
+        { icon: ICONS.swapHistory, label: i18n.t('history'), route: '/history' },
         { icon: ICONS.reviews, label: 'Reviews', route: '/reviews/me' },
-        { icon: ICONS.settings, label: 'Settings', route: '/settings' },
+        { icon: ICONS.settings, label: i18n.t('settings'), route: '/settings' },
     ];
 
     return (

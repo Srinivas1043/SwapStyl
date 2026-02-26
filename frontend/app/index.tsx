@@ -1,24 +1,25 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Link } from 'expo-router';
 import { Colors } from '../constants/Colors';
-
-const FEATURES = [
-    { icon: '🔄', text: 'Swap clothes you no longer wear' },
-    { icon: '🌿', text: 'Earn Eco Points with every swap' },
-    { icon: '🤖', text: 'AI-verified quality listings' },
-];
+import i18n from '../lib/i18n';
 
 export default function Welcome() {
+    const FEATURES = [
+        { icon: '🔄', text: i18n.t('feature1') },
+        { icon: '🌿', text: i18n.t('feature2') },
+        { icon: '🤖', text: i18n.t('feature3') },
+    ];
+
     return (
         <View style={styles.container}>
             {/* Hero */}
             <View style={styles.hero}>
                 <View style={styles.badge}>
-                    <Text style={styles.badgeText}>🌱 Sustainable Fashion</Text>
+                    <Text style={styles.badgeText}>{i18n.t('sustainFashion')}</Text>
                 </View>
                 <Text style={styles.logoText}>SwapStyl</Text>
                 <Text style={styles.tagline}>
-                    Give your wardrobe a second life.{'\n'}Swap. Earn. Sustain.
+                    {i18n.t('tagline')}
                 </Text>
             </View>
 
@@ -36,13 +37,13 @@ export default function Welcome() {
             <View style={styles.buttonContainer}>
                 <Link href="/(auth)/signup" asChild>
                     <Pressable style={styles.primaryButton}>
-                        <Text style={styles.primaryButtonText}>Get Started — It's Free</Text>
+                        <Text style={styles.primaryButtonText}>{i18n.t('getStarted') || 'Get Started'}</Text>
                     </Pressable>
                 </Link>
 
                 <Link href="/(auth)/login" asChild>
                     <Pressable style={styles.secondaryButton}>
-                        <Text style={styles.secondaryButtonText}>I already have an account</Text>
+                        <Text style={styles.secondaryButtonText}>{i18n.t('haveAccount') || 'Log In'}</Text>
                     </Pressable>
                 </Link>
             </View>

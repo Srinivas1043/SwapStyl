@@ -162,6 +162,16 @@ function SwipeCard({
     );
 }
 
+// Helper to translate filter options
+const getOptionLabel = (field: string, value: string) => {
+    if (!value) return '';
+    if (field === 'sort') return i18n.t(`sort_${value}`) || value;
+    if (field === 'category') return i18n.t(`cat_${value}`) || value;
+    if (field === 'gender') return i18n.t(`gen_${value}`) || value;
+    if (field === 'condition') return i18n.t(`cond_${value.replace(/ /g, '')}`) || value;
+    return value;
+};
+
 // ─── Filter Panel ─────────────────────────────────────────────────────────────
 function FilterPanel({ visible, filters, onChange, onApply, onClose }: {
     visible: boolean; filters: Filters;
@@ -172,7 +182,7 @@ function FilterPanel({ visible, filters, onChange, onApply, onClose }: {
         <View style={fp.filterRow}>
             <View style={fp.filterLeft}>
                 <Text style={fp.filterLabel}>{label}</Text>
-                <Text style={fp.filterValue}>{filters[field] || 'Any'}</Text>
+                <Text style={fp.filterValue}>{getOptionLabel(field, filters[field]) || 'Any'}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={Colors.neutrals.gray} />
         </View>
@@ -222,7 +232,9 @@ function FilterPanel({ visible, filters, onChange, onApply, onClose }: {
                                             style={[fp.chip, filters[field] === opt && fp.chipSelected]}
                                             onPress={() => onChange(field, filters[field] === opt ? '' : opt)}
                                         >
-                                            <Text style={[fp.chipText, filters[field] === opt && fp.chipTextSelected]}>{opt}</Text>
+                                            <Text style={[fp.chipText, filters[field] === opt && fp.chipTextSelected]}>
+                                                {getOptionLabel(field, opt)}
+                                            </Text>
                                         </TouchableOpacity>
                                     ))}
                                 </ScrollView>
