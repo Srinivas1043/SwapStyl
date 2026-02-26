@@ -109,7 +109,7 @@ def record_swipe(
             }).execute()
 
             # Increment unread counter for the item owner
- (User B) so they see a badge
+            # (User B) so they see a badge
             # u1 = min(swiper, owner), u2 = max; determine which slot the owner occupies
             owner_unread_field = "unread_user1" if owner_id == u1 else "unread_user2"
             try:

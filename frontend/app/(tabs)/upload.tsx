@@ -159,7 +159,11 @@ export default function UploadScreen() {
             try {
                 const verifyRes = await authenticatedFetch('/verify/item', {
                     method: 'POST',
-                    body: JSON.stringify({ brand: brand.trim(), image_urls: publicUrls }),
+                    body: JSON.stringify({ 
+                        brand: brand.trim(), 
+                        category: category || null, 
+                        image_urls: publicUrls 
+                    }),
                 });
                 aiScore = verifyRes.ai_score ?? 0;
                 aiVerified = verifyRes.verified ?? false;
