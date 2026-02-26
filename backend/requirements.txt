@@ -6,4 +6,5 @@ python-dotenv
 pydantic
 pytest
 httpx
-openaiemail-validator
+openai
+email-validator
