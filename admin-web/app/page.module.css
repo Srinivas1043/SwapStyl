@@ -95,11 +95,6 @@
   background-color: var(--primary-light);
 }
 
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .footer {
   text-align: center;
   margin-top: 24px;
@@ -108,3 +103,20 @@
   font-size: 12px;
   color: var(--text-secondary);
 }
+
+.footer p {
+  margin: 0.5rem 0;
+}
+
+.footer a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.footer a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+

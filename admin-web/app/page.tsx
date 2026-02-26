@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Cookies from 'js-cookie';
 import styles from './page.module.css';
 
@@ -84,6 +85,7 @@ export default function LoginPage() {
 
         <div className={styles.footer}>
           <p>🔐 Admin Access Only. All actions are logged.</p>
+          <p>Don't have an account? <Link href="/signup">Sign up here</Link></p>
         </div>
       </div>
     </div>

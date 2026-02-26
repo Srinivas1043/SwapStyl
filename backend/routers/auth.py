@@ -84,6 +84,19 @@ class LoginResponse(BaseModel):
     role: str
 
 
+class SignupRequest(BaseModel):
+    """Admin signup request"""
+    email: EmailStr
+    password: str
+
+
+class SignupResponse(BaseModel):
+    """Admin signup response"""
+    user_id: str
+    email: str
+    message: str
+
+
 # ─────────────────────────────────────────────────────────────────
 # ENDPOINTS
 # ─────────────────────────────────────────────────────────────────
@@ -155,9 +168,77 @@ async def admin_login(request: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid credentials or server error")
 
 
+@router.post(
+    "/signup",
+    response_model=SignupResponse,
+    summary="Admin signup",
+    description="Create a new admin user account"
+)
+async def admin_signup(request: SignupRequest):
+    """
+    Admin signup endpoint.
+    
+    **Parameters:**
+    - `email`: Admin email address
+    - `password`: Admin password (min 8 characters)
+    
+    **Returns:**
+    - `user_id`: UUID of the created user
+    - `email`: User email
+    - `message`: Confirmation message
+    
+    **Errors:**
+    - 400: Invalid email or password
+    - 409: Email already registered
+    - 500: Server error
+    """
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase client not configured")
+    
+    try:
+        # Validate password
+        if len(request.password) < 8:
+            raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+        
+        # Create user in auth.users
+        auth_response = supabase.auth.sign_up({
+            "email": request.email,
+            "password": request.password
+        })
+        
+        if not auth_response or not auth_response.user:
+            raise HTTPException(status_code=500, detail="Failed to create user")
+        
+        user_id = auth_response.user.id
+        
+        # Create profile entry (without admin role - requires approval)
+        try:
+            supabase.table("profiles").insert({
+                "id": user_id,
+                "email": request.email,
+                "role": None,  # No access until approved by admin
+                "created_at": datetime.utcnow().isoformat()
+            }).execute()
+        except Exception as profile_error:
+            print(f"Profile creation error: {profile_error}")
+            # Profile might already exist, continue
+        
+        return SignupResponse(
+            user_id=user_id,
+            email=request.email,
+            message="Account created successfully! An admin will review your request for access."
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Signup error: {str(e)}")
+        if "already registered" in str(e).lower():
+            raise HTTPException(status_code=409, detail="Email already registered")
+        raise HTTPException(status_code=500, detail=f"Signup failed: {str(e)}")
 
 
-@router.get(
+
     "/email-verification/status",
     response_model=EmailVerificationStatusResponse,
     summary="Check email verification status",

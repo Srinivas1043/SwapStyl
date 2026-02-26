@@ -18,13 +18,9 @@ export default function AdminsPage() {
   const router = useRouter();
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'admin' | 'moderator'>('admin');
-  const [creatingUser, setCreatingUser] = useState(false);
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [tempPassword, setTempPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [changingRole, setChangingRole] = useState<string | null>(null);
 
   useEffect(() => {
     const token = Cookies.get('admin_token');
@@ -54,41 +50,29 @@ export default function AdminsPage() {
     }
   };
 
-  const handleCreateAdmin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const handleSetRole = async (userId: string, newRole: string) => {
     setMessage('');
-    setTempPassword('');
-    setCreatingUser(true);
+    setError('');
+    setChangingRole(userId);
 
     try {
       const token = Cookies.get('admin_token');
-      const res = await fetch(`${API_URL}/admin/users/create-admin`, {
+      const res = await fetch(`${API_URL}/admin/users/${userId}/set-role?role=${newRole}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ email, role }),
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.detail || 'Failed to create admin');
+        throw new Error(err.detail || 'Failed to update role');
       }
 
-      const data = await res.json();
-      setTempPassword(data.user.temp_password);
-      setMessage(`Admin created! Temporary password: ${data.user.temp_password}`);
-      setEmail('');
-      setRole('admin');
-      
-      // Refresh admins list
+      setMessage(`Role updated successfully to ${newRole}`);
       await fetchAdmins();
     } catch (err: any) {
-      setError(err.message || 'Failed to create admin');
+      setError(err.message || 'Failed to update role');
     } finally {
-      setCreatingUser(false);
+      setChangingRole(null);
     }
   };
 
@@ -96,18 +80,9 @@ export default function AdminsPage() {
     if (!confirm(`Revoke admin access for ${userEmail}?`)) return;
 
     try {
-      const token = Cookies.get('admin_token');
-      const res = await fetch(`${API_URL}/admin/users/${userId}/admin-revoke`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error('Failed to revoke access');
-
-      setMessage(`Admin access revoked for ${userEmail}`);
-      await fetchAdmins();
-    } catch (err: any) {
-      setError(err.message || 'Failed to revoke access');
+      await handleSetRole(userId, 'null');
+    } catch (err) {
+      setError('Failed to revoke access');
     }
   };
 
@@ -115,64 +90,27 @@ export default function AdminsPage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1>Admin Management</h1>
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className={styles.createBtn}
-        >
-          {showCreateForm ? 'Cancel' : '+ Create Admin'}
-        </button>
+        <p className={styles.subtitle}>Manage admin and moderator users. New users should sign up first, then be approved here.</p>
       </div>
 
       {message && <div className={styles.successMessage}>{message}</div>}
       {error && <div className={styles.errorMessage}>{error}</div>}
 
-      {showCreateForm && (
-        <form onSubmit={handleCreateAdmin} className={styles.form}>
-          <div className={styles.formGroup}>
-            <label>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@example.com"
-              required
-              disabled={creatingUser}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Role</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as 'admin' | 'moderator')}
-              disabled={creatingUser}
-            >
-              <option value="admin">Admin</option>
-              <option value="moderator">Moderator</option>
-            </select>
-          </div>
-
-          <button type="submit" disabled={creatingUser} className={styles.submitBtn}>
-            {creatingUser ? 'Creating...' : 'Create Admin User'}
-          </button>
-
-          {tempPassword && (
-            <div className={styles.passwordBox}>
-              <p className={styles.passwordLabel}>Temporary Password:</p>
-              <code className={styles.passwordCode}>{tempPassword}</code>
-              <p className={styles.passwordNote}>
-                ⚠️ Share this password with the user. They should change it on first login.
-              </p>
-            </div>
-          )}
-        </form>
-      )}
+      <div className={styles.infoBox}>
+        <p>✨ <strong>Signup Process:</strong></p>
+        <ol>
+          <li>New users sign up at <code>/admin/signup</code></li>
+          <li>Their account is created in the system</li>
+          <li>Existing admins approve them here by setting their role to "admin" or "moderator"</li>
+          <li>Users can then log in and access the dashboard</li>
+        </ol>
+      </div>
 
       <div className={styles.tableContainer}>
         {loading ? (
           <p>Loading...</p>
         ) : admins.length === 0 ? (
-          <p className={styles.emptyState}>No admin users yet</p>
+          <p className={styles.emptyState}>No admin users yet. Users will appear here once they sign up.</p>
         ) : (
           <table className={styles.table}>
             <thead>
@@ -189,17 +127,38 @@ export default function AdminsPage() {
                   <td>{admin.email}</td>
                   <td>
                     <span className={`${styles.badge} ${styles[admin.role]}`}>
-                      {admin.role}
+                      {admin.role || 'unset'}
                     </span>
                   </td>
                   <td>{new Date(admin.created_at).toLocaleDateString()}</td>
-                  <td>
-                    <button
-                      onClick={() => handleRevokeAccess(admin.id, admin.email)}
-                      className={styles.revokeBtn}
-                    >
-                      Revoke Access
-                    </button>
+                  <td className={styles.actions}>
+                    {admin.role !== 'admin' && (
+                      <button
+                        onClick={() => handleSetRole(admin.id, 'admin')}
+                        disabled={changingRole === admin.id}
+                        className={styles.approveBtn}
+                      >
+                        {changingRole === admin.id ? '...' : 'Make Admin'}
+                      </button>
+                    )}
+                    {admin.role !== 'moderator' && (
+                      <button
+                        onClick={() => handleSetRole(admin.id, 'moderator')}
+                        disabled={changingRole === admin.id}
+                        className={styles.moderatorBtn}
+                      >
+                        {changingRole === admin.id ? '...' : 'Make Moderator'}
+                      </button>
+                    )}
+                    {admin.role && (
+                      <button
+                        onClick={() => handleRevokeAccess(admin.id, admin.email)}
+                        disabled={changingRole === admin.id}
+                        className={styles.revokeBtn}
+                      >
+                        {changingRole === admin.id ? '...' : 'Revoke Access'}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -210,3 +169,4 @@ export default function AdminsPage() {
     </div>
   );
 }
+

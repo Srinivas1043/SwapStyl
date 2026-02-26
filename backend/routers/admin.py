@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
-import secrets
 from dependencies import get_supabase, get_current_user, get_authenticated_client
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -30,18 +29,6 @@ class SuspendUserPayload(BaseModel):
     reason: str
 
 
-class CreateAdminPayload(BaseModel):
-    email: EmailStr
-    role: str = "admin"  # "admin" or "moderator"
-
-
-class AdminUserResponse(BaseModel):
-    id: str
-    email: str
-    role: str
-    created_at: Optional[str] = None
-
-
 
 # ── Middleware: Check if user is admin ──
 def check_admin(current_user=Depends(get_current_user), supabase=Depends(get_supabase)):
@@ -56,63 +43,6 @@ def check_admin(current_user=Depends(get_current_user), supabase=Depends(get_sup
 # ──────────────────────────────────────────────────────────────────────────────
 # ADMIN USER MANAGEMENT
 # ──────────────────────────────────────────────────────────────────────────────
-
-@router.post("/users/create-admin")
-def create_admin_user(
-    payload: CreateAdminPayload,
-    current_user=Depends(check_admin),
-    supabase=Depends(get_supabase),
-):
-    """Create a new admin or moderator user."""
-    try:
-        # Generate temporary password
-        temp_password = secrets.token_urlsafe(12)
-        
-        # Create user in auth.users
-        auth_response = supabase.auth.admin.create_user(
-            email=payload.email,
-            password=temp_password,
-            email_confirm=True  # Auto-confirm email
-        )
-        
-        if not auth_response or not auth_response.user:
-            raise HTTPException(status_code=500, detail="Failed to create auth user")
-        
-        user_id = auth_response.user.id
-        
-        # Create profile with admin role
-        profile_response = supabase.table("profiles").insert({
-            "id": user_id,
-            "email": payload.email,
-            "role": payload.role,
-            "created_at": datetime.utcnow().isoformat()
-        }).execute()
-        
-        # Log this action
-        supabase.table("moderation_log").insert({
-            "moderator_id": current_user.id,
-            "action_type": "admin_user_created",
-            "target": f"admin_user:{user_id}",
-            "reason": f"Created new {payload.role} user: {payload.email}",
-            "timestamp": datetime.utcnow().isoformat()
-        }).execute()
-        
-        return {
-            "success": True,
-            "message": f"Admin user created successfully",
-            "user": {
-                "id": user_id,
-                "email": payload.email,
-                "role": payload.role,
-                "temp_password": temp_password  # Show once for them to set their own password
-            }
-        }
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error creating admin user: {str(e)}")
-
 
 @router.get("/users/admins")
 def list_admin_users(
@@ -133,32 +63,35 @@ def list_admin_users(
         raise HTTPException(status_code=500, detail=f"Error fetching admin users: {str(e)}")
 
 
-@router.delete("/users/{user_id}/admin-revoke")
-def revoke_admin_access(
+@router.post("/users/{user_id}/set-role")
+def set_user_role(
     user_id: str,
+    role: Optional[str] = None,
     current_user=Depends(check_admin),
     supabase=Depends(get_supabase),
 ):
-    """Revoke admin/moderator access from a user."""
+    """Set admin or moderator role for a user."""
     try:
-        # Update role to null
+        # Update role
         supabase.table("profiles").update({
-            "role": None
+            "role": role
         }).eq("id", user_id).execute()
         
         # Log this action
         supabase.table("moderation_log").insert({
             "moderator_id": current_user.id,
-            "action_type": "admin_access_revoked",
+            "action_type": "user_role_changed",
             "target": f"user:{user_id}",
-            "reason": "Admin access revoked",
+            "reason": f"Role set to: {role}",
             "timestamp": datetime.utcnow().isoformat()
         }).execute()
         
-        return {"success": True, "message": "Admin access revoked"}
+        return {"success": True, "message": f"User role set to {role}"}
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error revoking admin access: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error setting user role: {str(e)}")
+
+
 
 
 
