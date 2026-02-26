@@ -69,9 +69,93 @@ class PasswordResetAttemptResponse(BaseModel):
     last_attempt_at: Optional[str] = None
 
 
+class LoginRequest(BaseModel):
+    """Admin login request"""
+    email: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    """Admin login response"""
+    access_token: str
+    token_type: str = "bearer"
+    user_id: str
+    email: str
+    role: str
+
+
 # ─────────────────────────────────────────────────────────────────
 # ENDPOINTS
 # ─────────────────────────────────────────────────────────────────
+
+@router.post(
+    "/login",
+    response_model=LoginResponse,
+    summary="Admin login",
+    description="Authenticate admin user with email and password"
+)
+async def admin_login(request: LoginRequest):
+    """
+    Admin login endpoint.
+    
+    **Parameters:**
+    - `email`: Admin email address
+    - `password`: Admin password
+    
+    **Returns:**
+    - `access_token`: JWT token for API requests
+    - `token_type`: "bearer"
+    - `user_id`: UUID of the authenticated user
+    - `email`: User email
+    - `role`: User role (should be "admin")
+    
+    **Errors:**
+    - 401: Invalid credentials or user is not an admin
+    - 500: Server error
+    """
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase client not configured")
+    
+    try:
+        # Sign in with email and password
+        auth_response = supabase.auth.sign_in_with_password({
+            "email": request.email,
+            "password": request.password
+        })
+        
+        if not auth_response or not auth_response.session:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        user_id = auth_response.user.id
+        access_token = auth_response.session.access_token
+        
+        # Check if user is admin
+        profile_response = supabase.table("profiles").select("role").eq("id", user_id).execute()
+        
+        if not profile_response.data:
+            raise HTTPException(status_code=401, detail="User profile not found")
+        
+        user_role = profile_response.data[0].get("role")
+        
+        if user_role not in ("admin", "moderator"):
+            raise HTTPException(status_code=403, detail="User does not have admin or moderator access")
+        
+        return LoginResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user_id=user_id,
+            email=request.email,
+            role=user_role
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Login error: {str(e)}")
+        raise HTTPException(status_code=401, detail="Invalid credentials or server error")
+
+
+
 
 @router.get(
     "/email-verification/status",
