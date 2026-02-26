@@ -211,22 +211,36 @@ async def admin_signup(request: SignupRequest):
         
         user_id = auth_response.user.id
         
-        # Create profile entry (without admin role - requires approval)
+        # Check if any admins exist
         try:
+            admins = supabase.table("profiles").select("id").in_("role", ["admin", "moderator"]).execute()
+            is_first_admin = not admins.data or len(admins.data) == 0
+        except:
+            is_first_admin = True
+        
+        # Create profile entry
+        try:
+            profile_role = "admin" if is_first_admin else None
             supabase.table("profiles").insert({
                 "id": user_id,
                 "email": request.email,
-                "role": None,  # No access until approved by admin
+                "role": profile_role,
                 "created_at": datetime.utcnow().isoformat()
             }).execute()
+            
+            message = (
+                "Welcome! You are the first admin and have been granted full access."
+                if is_first_admin 
+                else "Account created successfully! An admin will review your request for access."
+            )
         except Exception as profile_error:
             print(f"Profile creation error: {profile_error}")
-            # Profile might already exist, continue
+            message = "Account created but profile setup had issues. Please contact support."
         
         return SignupResponse(
             user_id=user_id,
             email=request.email,
-            message="Account created successfully! An admin will review your request for access."
+            message=message
         )
     
     except HTTPException:
