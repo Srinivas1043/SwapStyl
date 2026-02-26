@@ -303,3 +303,12 @@ def delete_item(
 
     supabase.table("items").delete().eq("id", item_id).execute()
     return {"deleted": True}
+
+@router.get("/user/{user_id}")
+def get_user_wardrobe(
+    user_id: str,
+    public_supabase=Depends(get_supabase),
+):
+    """Get a user's wardrobe (available items only for matched users)."""
+    resp = public_supabase.table("items").select("*").eq("owner_id", user_id).eq("status", "available").execute()
+    return {"items": resp.data or []}

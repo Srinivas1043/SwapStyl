@@ -53,6 +53,32 @@ def get_my_profile(current_user = Depends(get_current_user), supabase = Depends(
 
     return profile
 
+@router.get("/{user_id}")
+def get_user_profile(user_id: str, supabase = Depends(get_supabase)):
+    """Get a public user profile (limited info for matched users)."""
+    response = supabase.table("profiles").select("id, full_name, username, avatar_url, location, latitude, longitude, eco_points, created_at").eq("id", user_id).single().execute()
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    profile = response.data
+    
+    # 1. Items swapped
+    swapped_count_resp = supabase.table("items").select("id", count="exact").eq("owner_id", user_id).eq("status", "swapped").execute()
+    profile["items_swapped"] = swapped_count_resp.count if swapped_count_resp.count is not None else 0
+    
+    # 2. Average Rating
+    reviews_resp = supabase.table("reviews").select("rating").eq("reviewee_id", user_id).execute()
+    if reviews_resp.data:
+        ratings = [r["rating"] for r in reviews_resp.data]
+        profile["rating"] = round(sum(ratings) / len(ratings), 1)
+    else:
+        profile["rating"] = 0.0
+
+    # 3. Eco points
+    profile["eco_points"] = profile.get("eco_points") or 0
+
+    return profile
+
 @router.put("/me")
 def update_my_profile(
     profile: ProfileUpdate,

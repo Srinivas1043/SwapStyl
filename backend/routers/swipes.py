@@ -140,3 +140,21 @@ def get_seen_items(
         return {"seen": [row["item_id"] for row in (resp.data or [])]}
     except Exception:
         return {"seen": []}
+
+@router.post("/unmatch/{user_id}")
+def unmatch_user(
+    user_id: str,
+    current_user=Depends(get_current_user),
+    supabase=Depends(get_authenticated_client),
+):
+    """Remove a matched user by deleting the conversation."""
+    u1 = min(current_user.id, user_id)
+    u2 = max(current_user.id, user_id)
+    
+    # Delete conversation between these two users
+    try:
+        supabase.table("conversations").delete().eq("user1_id", u1).eq("user2_id", u2).execute()
+        return {"unmatched": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to unmatch: {str(e)}")
+

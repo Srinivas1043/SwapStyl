@@ -100,14 +100,18 @@ export default function ChatsScreen() {
                 </View>
 
                 {/* Other user avatar - overlapping thumb */}
-                <View style={s.avatarWrapper}>
+                <TouchableOpacity
+                    style={s.avatarWrapper}
+                    onPress={() => router.push(`/profile/${other?.id}`)}
+                    activeOpacity={0.7}
+                >
                     {other?.avatar_url
                         ? <Image source={{ uri: other.avatar_url }} style={s.avatar} />
                         : <View style={[s.avatar, s.avatarFallback]}>
                             <Text style={s.avatarInitial}>{(other?.full_name || '?')[0].toUpperCase()}</Text>
                         </View>
                     }
-                </View>
+                </TouchableOpacity>
 
                 {/* Content */}
                 <View style={s.content}>
