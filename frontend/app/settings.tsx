@@ -1,17 +1,75 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, ActionSheetIOS, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import i18n from '../lib/i18n';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SettingsScreen() {
     const router = useRouter();
     const [notifications, setNotifications] = useState(true);
     const [matchAlerts, setMatchAlerts] = useState(true);
     const [promotions, setPromotions] = useState(false);
+    const [locale, setLocale] = useState(i18n.locale);
+
+    useEffect(() => {
+        // Load saved language on mount
+        AsyncStorage.getItem('user-language').then(lang => {
+           if (lang) {
+               i18n.locale = lang;
+               setLocale(lang);
+           }
+        });
+    }, []);
+
+    const changeLanguage = () => {
+        const options = ['English', 'Nederlands', 'Italiano', 'Cancel'];
+        const values = ['en', 'nl', 'it'];
+
+        if (Platform.OS === 'ios') {
+            ActionSheetIOS.showActionSheetWithOptions(
+                { options, cancelButtonIndex: 3 },
+                buttonIndex => {
+                    if (buttonIndex < 3) applyLanguage(values[buttonIndex]);
+                }
+            );
+        } else {
+            Alert.alert(
+                'Select Language',
+                'Choose your preferred language',
+                [
+                    { text: 'English', onPress: () => applyLanguage('en') },
+                    { text: 'Nederlands', onPress: () => applyLanguage('nl') },
+                    { text: 'Italiano', onPress: () => applyLanguage('it') },
+                    { text: 'Cancel', style: 'cancel' }
+                ]
+            );
+        }
+    };
+
+    const applyLanguage = async (lang: string) => {
+        i18n.locale = lang;
+        setLocale(lang);
+        await AsyncStorage.setItem('user-language', lang);
+        // Force re-render of current screen only - for full app reload, context is better or restart
+        router.replace('/settings'); 
+    };
 
     const sections = [
+        {
+            title: 'General',
+            items: [
+                { 
+                    label: 'Language', 
+                    value: locale === 'en' ? 'English' : locale === 'nl' ? 'Nederlands' : 'Italiano', 
+                    toggle: false, 
+                    arrow: true,
+                    onPress: changeLanguage 
+                },
+            ],
+        },
         {
             title: 'Notifications',
             items: [
@@ -45,7 +103,7 @@ export default function SettingsScreen() {
                 <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
                     <Ionicons name="chevron-back" size={24} color={Colors.secondary.deepMaroon} />
                 </TouchableOpacity>
-                <Text style={s.title}>Settings</Text>
+                <Text style={s.title}>{i18n.t('settings')} </Text>
                 <View style={{ width: 32 }} />
             </View>
 

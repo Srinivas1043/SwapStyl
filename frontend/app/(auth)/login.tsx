@@ -135,6 +135,9 @@ export default function Login() {
 
         setLoading(true);
         try {
+            // Ensure we use a stable redirect URL for reset password
+            // For Expo Go: exp://...
+            // For build: swapstyl://...
             const redirectTo = Linking.createURL('/(auth)/reset-password');
             console.log('Reset Password Redirect URL:', redirectTo);
 
