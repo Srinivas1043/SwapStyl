@@ -1,0 +1,40 @@
+{
+  "cli": {
+    "version": ">= 16.19.1",
+    "requireCommit": true,
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EAS_RESTORE_CACHE": "0",
+        "EAS_BUILD_DISABLE_NPM_CACHE": "1",
+        "EAS_BUILD_DISABLE_MAVEN_CACHE": "1"
+      },
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Release"
+      },
+      "distribution": "internal"
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "ios": {
+        "buildConfiguration": "Release"
+      },
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
