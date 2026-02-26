@@ -42,7 +42,6 @@ export default function SwipeCard({ item, onSwipeLeft, onSwipeRight }: SwipeCard
     };
 
     const onSwipeComplete = (direction: 'left' | 'right') => {
-        const { onSwipeLeft, onSwipeRight } = { onSwipeLeft, onSwipeRight }; // access props from closure or pass them?
         // Actually props are available in scope.
         direction === 'right' ? onSwipeRight() : onSwipeLeft();
         // Reset position not strictly needed if component unmounts, but good practice if recycled
