@@ -26,6 +26,21 @@ export default function ResetPassword() {
     useEffect(() => {
         // When user clicks the reset link from email, Supabase sets up the session
         // We just need to prepare the form
+        
+        // Listen to auth state changes - sometimes the session isn't immediately available on mount
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                // This event is triggered when a password recovery link is used
+                console.log('Password recovery session established');
+            }
+        });
+
+        // Also check if we have a hash in the URL params if opened via deep link
+        // but typically supabase.ts handles the session restoration.
+        
+        return () => {
+            subscription.unsubscribe();
+        };
     }, []);
 
     function validate(): string | null {

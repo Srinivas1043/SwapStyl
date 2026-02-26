@@ -11,8 +11,7 @@ import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
 import { authenticatedFetch } from '../../lib/api';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
-import { decode } from 'base64-arraybuffer';
+import { decode } from 'base64-arraybuffer'; // kept for backward compat if needed elsewhere, but unused here now
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -291,12 +290,13 @@ export default function ChatScreen() {
                 const ext = uri.split('.').pop()?.toLowerCase() || 'jpg';
                 const fileName = `${myId}_${Date.now()}.${ext}`;
 
-                // Use base64-arraybuffer for reliable upload in React Native with Supabase
-                const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+                // Use fetch to get ArrayBuffer - more compatible with newer Expo versions
+                const response = await fetch(uri);
+                const arrayBuffer = await response.arrayBuffer();
                 
                 const { data, error } = await supabase.storage
                     .from('chat')
-                    .upload(fileName, decode(base64), {
+                    .upload(fileName, arrayBuffer, {
                         contentType: asset.mimeType || `image/${ext}`,
                         upsert: false,
                     });
