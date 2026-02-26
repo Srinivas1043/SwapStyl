@@ -252,7 +252,7 @@ async def admin_signup(request: SignupRequest):
         raise HTTPException(status_code=500, detail=f"Signup failed: {str(e)}")
 
 
-
+@router.get(
     "/email-verification/status",
     response_model=EmailVerificationStatusResponse,
     summary="Check email verification status",
