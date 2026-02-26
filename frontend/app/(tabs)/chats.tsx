@@ -76,7 +76,6 @@ export default function ChatsScreen() {
         const lastMsg = conv.last_message;
         const status = conv.status || 'interested';
         const unread = conv.my_unread || 0;
-        const itemData = conv.item;  // Item metadata from last message
 
         const previewText = lastMsg
             ? (lastMsg.is_deleted ? 'Message removed'
@@ -91,27 +90,15 @@ export default function ChatsScreen() {
                 activeOpacity={0.75}
                 onPress={() => router.push(`/chat/${conv.id}`)}
             >
-                {/* Item thumbnail from last message metadata */}
-                <View style={s.thumbWrapper}>
-                    {itemData?.item_image
-                        ? <Image source={{ uri: itemData.item_image }} style={s.thumb} resizeMode="cover" />
-                        : <View style={[s.thumb, s.thumbFallback]}><Ionicons name="shirt-outline" size={18} color="#BBB" /></View>
-                    }
-                </View>
-
-                {/* Other user avatar - overlapping thumb */}
-                <TouchableOpacity
-                    style={s.avatarWrapper}
-                    onPress={() => router.push(`/profile/${other?.id}`)}
-                    activeOpacity={0.7}
-                >
+                {/* User avatar on the left */}
+                <View style={s.avatarWrapper}>
                     {other?.avatar_url
-                        ? <Image source={{ uri: other.avatar_url }} style={s.avatar} />
+                        ? <Image source={{ uri: other.avatar_url }} style={s.avatar} resizeMode="cover" />
                         : <View style={[s.avatar, s.avatarFallback]}>
                             <Text style={s.avatarInitial}>{(other?.full_name || '?')[0].toUpperCase()}</Text>
                         </View>
                     }
-                </TouchableOpacity>
+                </View>
 
                 {/* Content */}
                 <View style={s.content}>
@@ -119,23 +106,17 @@ export default function ChatsScreen() {
                         <Text style={s.name} numberOfLines={1}>{other?.full_name || other?.username || 'Unknown'}</Text>
                         <Text style={s.time}>{lastMsg ? timeAgo(lastMsg.created_at) : ''}</Text>
                     </View>
-                    <Text style={s.itemTitle} numberOfLines={1}>{itemData?.title || 'Unknown item'}</Text>
                     <View style={s.bottomRow}>
                         <Text style={[s.preview, unread > 0 && s.previewBold]} numberOfLines={1}>
                             {previewText}
                         </Text>
-                        <View style={[s.statusBadge, { backgroundColor: DEAL_COLORS[status] + '20', borderColor: DEAL_COLORS[status] }]}>
-                            <Text style={[s.statusText, { color: DEAL_COLORS[status] }]}>{DEAL_LABELS[status]}</Text>
-                        </View>
+                        {unread > 0 && (
+                            <View style={s.unreadBadge}>
+                                <Text style={s.unreadText}>{unread > 9 ? '9+' : unread}</Text>
+                            </View>
+                        )}
                     </View>
                 </View>
-
-                {/* Unread dot */}
-                {unread > 0 && (
-                    <View style={s.unreadBadge}>
-                        <Text style={s.unreadText}>{unread > 9 ? '9+' : unread}</Text>
-                    </View>
-                )}
             </TouchableOpacity>
         );
     }
@@ -195,40 +176,30 @@ const s = StyleSheet.create({
 
     row: {
         flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: 16, paddingVertical: 14,
+        paddingHorizontal: 16, paddingVertical: 12,
         backgroundColor: '#fff',
+        gap: 12,
     },
-    thumbWrapper: { position: 'relative', marginRight: 12 },
-    thumb: { width: 52, height: 52, borderRadius: 10, backgroundColor: '#EEE' },
-    thumbFallback: { alignItems: 'center', justifyContent: 'center' },
     avatarWrapper: {
-        position: 'absolute', bottom: -4, right: 4,
-        width: 26, height: 26, borderRadius: 13,
-        borderWidth: 2, borderColor: '#fff',
-        overflow: 'hidden',
-        zIndex: 1,
+        width: 56, height: 56, borderRadius: 28,
+        overflow: 'hidden', flexShrink: 0,
+        backgroundColor: '#F0F0F0',
     },
-    avatar: { width: 22, height: 22, borderRadius: 11 },
-    avatarFallback: { backgroundColor: Colors.secondary.deepMaroon, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-    avatarInitial: { color: '#fff', fontSize: 10, fontWeight: '700' },
-    content: { flex: 1, gap: 2 },
+    avatar: { width: 56, height: 56 },
+    avatarFallback: { backgroundColor: Colors.secondary.deepMaroon, width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
+    avatarInitial: { color: '#fff', fontSize: 20, fontWeight: '700' },
+    content: { flex: 1, gap: 4 },
     topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     name: { fontSize: 15, fontWeight: '700', color: Colors.secondary.deepMaroon, flex: 1 },
-    time: { fontSize: 11, color: '#999', marginLeft: 8 },
-    itemTitle: { fontSize: 12, color: '#888', fontStyle: 'italic' },
-    bottomRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
-    preview: { fontSize: 13, color: '#999', flex: 1 },
+    time: { fontSize: 12, color: '#999' },
+    bottomRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    preview: { fontSize: 13, color: '#666', flex: 1 },
     previewBold: { color: Colors.secondary.deepMaroon, fontWeight: '600' },
-    statusBadge: {
-        borderWidth: 1, borderRadius: 10,
-        paddingHorizontal: 7, paddingVertical: 2, flexShrink: 0,
-    },
-    statusText: { fontSize: 10, fontWeight: '700' },
-    sep: { height: 1, backgroundColor: '#F0EDE8', marginLeft: 80 },
+    sep: { height: 1, backgroundColor: '#F0EDE8', marginLeft: 68 },
     unreadBadge: {
-        marginLeft: 8, backgroundColor: Colors.primary.forestGreen,
+        backgroundColor: Colors.primary.forestGreen,
         borderRadius: 10, width: 20, height: 20,
-        alignItems: 'center', justifyContent: 'center',
+        alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     },
     unreadText: { color: '#fff', fontSize: 11, fontWeight: '800' },
 });
