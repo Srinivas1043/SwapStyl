@@ -142,8 +142,8 @@ export default function Login() {
                 redirectTo,
             });
 
-            if (error) {
-                Alert.alert('Error', error.message);
+            if (resetError) {
+                Alert.alert('Error', resetError.message);
                 setLoading(false);
                 return;
             }
