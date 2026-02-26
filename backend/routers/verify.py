@@ -25,19 +25,21 @@ router = APIRouter(prefix="/verify", tags=["verify"])
 
 class VerifyRequest(BaseModel):
     brand: str
+    category: str = None
     image_urls: List[str]
 
 
-def _call_openai_sync(image_bytes: bytes, mime_type: str, brand: str) -> dict:
+def _call_openai_sync(image_bytes: bytes, mime_type: str, brand: str, category: str = None) -> dict:
     """Synchronous OpenAI call  runs in a thread via asyncio.to_thread."""
     if not _SDK_AVAILABLE:
         return {"confidence": 0, "reason": "openai SDK not installed"}
 
+    cat_str = f" ({category})" if category else ""
     prompt = (
         f'You are a fashion authentication expert. '
-        f'Examine this clothing item image. '
+        f'Examine this item image{cat_str}. '
         f'Does it show a genuine item from the brand "{brand}"? '
-        f'Check for brand labels, logos, tags, and stitching quality. '
+        f'Check for correct features, brand labels, logos, tags, and stitching quality typical for {category or "this type of product"}. '
         f'Reply ONLY with JSON (no markdown): {{"confidence": <0-100 integer>, "reason": "<one sentence>"}}'
     )
 
@@ -54,7 +56,7 @@ def _call_openai_sync(image_bytes: bytes, mime_type: str, brand: str) -> dict:
                         {
                             "type": "image_url",
                             "image_url": {
-                                "url": f"data:{mime_type};base64,{base64_image}"
+                                "url": f"data:image/jpeg;base64,{base64_image}"
                             }
                         }
                     ]

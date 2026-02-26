@@ -79,6 +79,51 @@ def list_conversations(
     return result
 
 
+@router.post("")
+def create_conversation(
+    target_user_id: str = Body(..., embed=True),
+    item_id: Optional[str] = Body(None, embed=True),
+    current_user=Depends(get_current_user),
+    supabase=Depends(get_authenticated_client),
+):
+    """Start or retrieve conversation with another user."""
+    uid = current_user.id
+    
+    # Ensure consistent ordering for lookup
+    # Because we store user1_id < user2_id (usually), but let's check both ways or ensure order
+    # The schema usually implies user1 < user2, but let's be safe
+    u1, u2 = sorted([uid, target_user_id])
+
+    # 1. Check if conversation already exists between these two users
+    try:
+        existing = (
+            supabase.table("conversations")
+            .select("id")
+            .eq("user1_id", u1)
+            .eq("user2_id", u2)
+            .execute()
+        )
+        if existing.data:
+            return {"id": existing.data[0]["id"], "is_new": False}
+    except Exception:
+        pass
+
+    # 2. If not exists, create new
+    try:
+        new_conv = {
+            "user1_id": u1,
+            "user2_id": u2,
+            "item_id": item_id,
+            "status": "interested"
+        }
+        resp = supabase.table("conversations").insert(new_conv).execute()
+        if resp.data:
+            return {"id": resp.data[0]["id"], "is_new": True}
+    except Exception as e:
+        # If race condition or whatever, try fetch again
+        raise HTTPException(400, f"Failed to create conversation: {str(e)}")
+
+
 @router.get("/{conv_id}")
 def get_conversation(
     conv_id: str,

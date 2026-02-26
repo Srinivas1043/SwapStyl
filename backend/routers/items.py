@@ -227,6 +227,7 @@ async def re_verify_item(
 
     images = item.get("images") or []
     brand = item.get("brand", "")
+    category = item.get("category", "")
 
     if not images:
         raise HTTPException(status_code=422, detail="No images to verify")
@@ -246,7 +247,7 @@ async def re_verify_item(
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Could not fetch image: {e}")
 
-    result = await asyncio.to_thread(_call_openai_sync, image_bytes, mime_type, brand)
+    result = await asyncio.to_thread(_call_openai_sync, image_bytes, mime_type, brand, category)
     confidence = result["confidence"]
     new_status = "available" if confidence >= 85 else "pending_review"
 

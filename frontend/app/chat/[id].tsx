@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase';
 import { authenticatedFetch } from '../../lib/api';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import { decode } from 'base64-arraybuffer';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -274,33 +275,45 @@ export default function ChatScreen() {
     }
 
     async function pickImage() {
+        if (sending) return;
+
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
-            allowsEditing: true,
+            allowsEditing: true, 
             quality: 0.7,
         });
 
-        if (!result.canceled && result.assets[0]) {
+        if (!result.canceled && result.assets && result.assets[0]) {
             setSending(true);
             try {
-                const uri = result.assets[0].uri;
-                const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
-                const ext = uri.split('.').pop() || 'jpg';
+                const asset = result.assets[0];
+                const uri = asset.uri;
+                const ext = uri.split('.').pop()?.toLowerCase() || 'jpg';
                 const fileName = `${myId}_${Date.now()}.${ext}`;
 
+                // Use base64-arraybuffer for reliable upload in React Native with Supabase
+                const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+                
                 const { data, error } = await supabase.storage
                     .from('chat')
-                    .upload(fileName, decodeURIComponent(escape(atob(base64))), {
-                        contentType: `image/${ext}`,
+                    .upload(fileName, decode(base64), {
+                        contentType: asset.mimeType || `image/${ext}`,
                         upsert: false,
                     });
 
-                if (error) throw error;
-                const { data: { publicUrl } } = supabase.storage.from('chat').getPublicUrl(data.path);
+                if (error) {
+                    console.error('Supabase upload error:', error);
+                    throw error;
+                }
 
-                await sendMessage('📷 Image', 'image', { url: publicUrl });
+                const { data: { publicUrl } } = supabase.storage.from('chat').getPublicUrl(data.path);
+                
+                // Send the message with type='image'
+                await sendMessage('📷 Image', 'image', { url: publicUrl, width: asset.width, height: asset.height });
+
             } catch (e: any) {
-                Alert.alert('Upload failed', e.message);
+                console.error('PickImage error:', e);
+                Alert.alert('Upload failed', e.message || 'Could not upload image');
             } finally {
                 setSending(false);
             }
@@ -476,10 +489,10 @@ export default function ChatScreen() {
                 {/* ── Input row ── */}
                 <View style={s.inputBar}>
                     <TouchableOpacity style={s.wardrobeBtn} onPress={pickImage} disabled={sending}>
-                        <Ionicons name="image-outline" size={22} color={Colors.secondary.deepMaroon} />
+                        <Ionicons name="attach" size={24} color={Colors.secondary.deepMaroon} />
                     </TouchableOpacity>
                     <TouchableOpacity style={s.wardrobeBtn} onPress={() => setWardrobeOpen(true)}>
-                        <Ionicons name="shirt-outline" size={22} color={Colors.secondary.deepMaroon} />
+                        <Ionicons name="shirt-outline" size={24} color={Colors.secondary.deepMaroon} />
                     </TouchableOpacity>
                     <TextInput
                         style={s.input}

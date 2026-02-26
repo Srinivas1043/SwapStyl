@@ -59,14 +59,13 @@ def record_swipe(
         u1 = min(current_user.id, owner_id)
         u2 = max(current_user.id, owner_id)
 
-        # Step 1: Check if a conversation already exists for this pair+item
+        # Try to find existing conversation between these users
+        # ignoring item_id here to enforce single-chat-per-pair
         existing_resp = (
             public_supabase.table("conversations")
             .select("id")
             .eq("user1_id", u1)
             .eq("user2_id", u2)
-            .eq("item_id", swipe.item_id)
-            .limit(1)
             .execute()
         )
         existing_rows = existing_resp.data or []
@@ -74,26 +73,43 @@ def record_swipe(
 
         # Step 2: No existing conversation — create one
         if not conversation_id:
-            insert_resp = (
-                public_supabase.table("conversations")
-                .insert({
-                    "user1_id": u1,
-                    "user2_id": u2,
-                    "item_id": swipe.item_id,
-                })
-                .execute()
-            )
-            conversation_id = (insert_resp.data or [{}])[0].get("id")
+            try:
+                insert_resp = (
+                    public_supabase.table("conversations")
+                    .insert({
+                        "user1_id": u1,
+                        "user2_id": u2,
+                        "item_id": swipe.item_id,  # Initial item context
+                    })
+                    .execute()
+                )
+                conversation_id = (insert_resp.data or [{}])[0].get("id")
+            except Exception:
+                # Handle race condition or constraint violation if any
+                pass
 
         if conversation_id:
-            message_text = f"{swiper_name} is interested in your \"{item['title']}\""
+            # Send message
+            # If conversation existed, we are chatting about a NEW item in the SAME chat.
+            # Maybe we should clarify that in the message type or content.
+            # The original code sent a text message.
+            message_text = f"I am interested in your item \"{item['title']}\""
+            
+            # We can use 'item_proposal' type if we want to show a card, 
+            # or just text. The frontend handles 'item_proposal' well.
+            # Let's stick to text for the automated message for now, but maybe enhance it? 
+            # The user requirement said "Image upload should be seen...". 
+            # It also said "Chat should be per person".
+            
             public_supabase.table("messages").insert({
                 "conversation_id": conversation_id,
                 "sender_id": current_user.id,
                 "content": message_text,
+                "type": "text" 
             }).execute()
 
-            # Increment unread counter for the item owner (User B) so they see a badge
+            # Increment unread counter for the item owner
+ (User B) so they see a badge
             # u1 = min(swiper, owner), u2 = max; determine which slot the owner occupies
             owner_unread_field = "unread_user1" if owner_id == u1 else "unread_user2"
             try:
