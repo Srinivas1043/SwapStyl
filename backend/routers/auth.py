@@ -218,14 +218,18 @@ async def admin_signup(request: SignupRequest):
         except:
             is_first_admin = True
         
-        # Create profile entry
+        # Create profile entry with email
         try:
             profile_role = "admin" if is_first_admin else None
-            supabase.table("profiles").insert({
+            profile_data = {
                 "id": user_id,
+                "email": request.email,
+                "username": request.email.split("@")[0],  # Use email prefix as default username
                 "role": profile_role,
-                "role_updated_at": datetime.utcnow().isoformat()
-            }).execute()
+                "role_updated_at": datetime.utcnow().isoformat(),
+                "created_at": datetime.utcnow().isoformat()
+            }
+            supabase.table("profiles").insert(profile_data).execute()
             
             message = (
                 "Welcome! You are the first admin and have been granted full access."
