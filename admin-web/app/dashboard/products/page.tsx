@@ -17,6 +17,7 @@ interface Item {
 export default function ProductsPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [modalItem, setModalItem] = useState<Item | null>(null);
@@ -31,11 +32,14 @@ export default function ProductsPage() {
   const loadItems = async () => {
     try {
       setLoading(true);
+      setError('');
       const resp = await apiCall('GET', `/admin/items/pending?page=${page}&page_size=20`);
       setItems(resp.items || []);
       setHasMore(resp.has_more);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load items:', err);
+      setError(err.message || 'Failed to load pending items. Please try again.');
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -45,6 +49,7 @@ export default function ProductsPage() {
     if (!modalItem || !modalAction) return;
     try {
       setSubmitting(true);
+      setError('');
       await apiCall('POST', `/admin/items/${modalItem.id}/moderate`, {
         action: modalAction,
         reason: reason || undefined,
@@ -53,8 +58,8 @@ export default function ProductsPage() {
       setModalAction(null);
       setReason('');
       loadItems();
-    } catch (err) {
-      alert('Failed to moderate item');
+    } catch (err: any) {
+      setError(err.message || 'Failed to moderate item');
     } finally {
       setSubmitting(false);
     }
@@ -70,6 +75,8 @@ export default function ProductsPage() {
         <h1>Product Review</h1>
         <p>Approve or reject items pending manual review</p>
       </div>
+
+      {error && <div className={styles.errorBanner}>{error}</div>}
 
       {items.length === 0 ? (
         <div className={styles.empty}>

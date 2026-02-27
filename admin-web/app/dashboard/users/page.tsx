@@ -17,6 +17,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [filter, setFilter] = useState<'all' | 'suspended'>('all');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -31,14 +32,17 @@ export default function UsersPage() {
   const loadUsers = async () => {
     try {
       setLoading(true);
+      setError('');
       const url = filter === 'suspended' 
         ? `/admin/users?suspended_only=true&page=${page}&page_size=20`
         : `/admin/users?page=${page}&page_size=20`;
       const resp = await apiCall('GET', url);
       setUsers(resp.users || []);
       setHasMore(resp.has_more);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load users:', err);
+      setError(err.message || 'Failed to load users. Please try again.');
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -48,6 +52,7 @@ export default function UsersPage() {
     if (!selectedUser || !action) return;
     try {
       setSubmitting(true);
+      setError('');
       if (action === 'suspend') {
         await apiCall('POST', `/admin/users/${selectedUser.id}/suspend`, {
           reason: reason || 'No reason provided',
@@ -59,8 +64,8 @@ export default function UsersPage() {
       setAction(null);
       setReason('');
       loadUsers();
-    } catch (err) {
-      alert(`Failed to ${action} user`);
+    } catch (err: any) {
+      setError(err.message || `Failed to ${action} user`);
     } finally {
       setSubmitting(false);
     }
@@ -76,6 +81,8 @@ export default function UsersPage() {
         <h1>User Management</h1>
         <p>Manage users, view profiles, and handle suspensions</p>
       </div>
+
+      {error && <div className={styles.errorBanner}>{error}</div>}
 
       <div className={styles.filterBar}>
         <button

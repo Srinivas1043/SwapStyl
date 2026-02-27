@@ -443,3 +443,35 @@ def get_users(
         "total": count,
         "has_more": offset + page_size < count,
     }
+
+
+@router.get("/logs")
+def get_moderation_logs(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, le=100),
+    current_user=Depends(check_admin),
+    supabase=Depends(get_supabase),
+):
+    """Get moderation logs (audit trail)."""
+    offset = (page - 1) * page_size
+    
+    resp = (
+        supabase.table("moderation_log")
+        .select("*, moderator:moderator_id(id, full_name, email)")
+        .order("created_at", desc=True)
+        .range(offset, offset + page_size - 1)
+        .execute()
+    )
+    logs = resp.data or []
+
+    # Get total
+    count_resp = supabase.table("moderation_log").select("id", count="exact").execute()
+    total = count_resp.count or 0
+
+    return {
+        "logs": logs,
+        "page": page,
+        "page_size": page_size,
+        "total": total,
+        "has_more": offset + page_size < total,
+    }
