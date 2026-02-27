@@ -46,8 +46,12 @@ CREATE TRIGGER on_auth_user_created
 -- ==================== STEP 3: Setup RLS Policies for Admin ====================
 -- Admin policies: Access control based on role in profiles
 
--- Drop existing conflicting policies
+-- Drop existing conflicting policies (handles re-runs)
 DROP POLICY IF EXISTS "Users can insert their own profile." ON public.profiles;
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Admins can update profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile v2" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile." ON public.profiles;
 
 -- Admin can view all profiles
 CREATE POLICY "Admins can view all profiles"
@@ -134,7 +138,12 @@ ADD COLUMN IF NOT EXISTS deleted_at timestamp with time zone;
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.moderation_log ENABLE ROW LEVEL SECURITY;
 
--- RLS policies
+-- RLS policies - Drop existing ones first to avoid conflicts
+DROP POLICY IF EXISTS "Users can view own reports" ON public.reports;
+DROP POLICY IF EXISTS "Users can create reports" ON public.reports;
+DROP POLICY IF EXISTS "Admins can update reports" ON public.reports;
+DROP POLICY IF EXISTS "Only admins can view moderation log" ON public.moderation_log;
+
 CREATE POLICY "Users can view own reports" ON public.reports
   FOR SELECT USING (auth.uid() = reporter_id OR auth.uid() IN (SELECT id FROM public.profiles WHERE role IN ('admin', 'moderator')));
 
