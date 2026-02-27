@@ -440,37 +440,57 @@ def get_users(
     current_user=Depends(check_admin),
     supabase=Depends(get_supabase),
 ):
-    """Get users list."""
+    """Get users list with email from auth.users."""
     try:
         offset = (page - 1) * page_size
         
-        query = supabase.table("profiles").select("id, full_name, email, avatar_url, role, created_at, suspended_at, suspension_reason")
+        # Query profiles with filters
+        query = supabase.table("profiles").select(
+            "id, full_name, username, avatar_url, role, created_at, suspended_at, suspension_reason"
+        )
         
         if suspended_only:
             query = query.neq("suspended_at", None)
         
         resp = query.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
-        users = resp.data or []
+        profiles = resp.data or []
 
-        # Get total
-        count_resp = supabase.table("profiles").select("id", count="exact")
+        # Get total count
+        count_query = supabase.table("profiles").select("id", count="exact")
         if suspended_only:
-            count_resp = count_resp.neq("suspended_at", None)
-        count = count_resp.execute().count or 0
+            count_query = count_query.neq("suspended_at", None)
+        count_resp = count_query.execute()
+        total = count_resp.count or 0
+
+        # Get all auth users to map emails (service-role client can access auth.users)
+        try:
+            # Try to get auth users - requires service role
+            auth_users_resp = supabase.auth.admin.list_users()
+            auth_users_map = {u.id: u.email for u in (auth_users_resp.users or [])}
+        except:
+            # Fallback if admin API not available
+            auth_users_map = {}
+
+        # Add email to each profile
+        users = []
+        for profile in profiles:
+            user_id = profile.get("id")
+            profile["email"] = auth_users_map.get(user_id, f"user-{user_id[:8]}@swapstyl.app")
+            users.append(profile)
 
         return {
             "users": users,
             "page": page,
             "page_size": page_size,
-            "total": count,
-            "has_more": offset + page_size < count,
+            "total": total,
+            "has_more": offset + page_size < total,
         }
     except Exception as e:
         error_msg = str(e)
         if "column" in error_msg.lower() or "does not exist" in error_msg.lower():
             raise HTTPException(
                 status_code=500,
-                detail="Database schema not properly configured. Please apply migration: DB/migration_admin_system.sql"
+                detail="Database schema not properly configured. Please apply migration: DB/fix_profiles_table.sql"
             )
         raise HTTPException(status_code=500, detail=f"Failed to fetch users: {error_msg}")
 

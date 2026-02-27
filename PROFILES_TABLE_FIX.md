@@ -1,12 +1,139 @@
 # 🔧 Fix Profiles Table - Complete Setup
 
-## Problem
-Your `profiles` table has issues:
-1. Missing columns: `role`, `email`, `suspended_at`, `suspension_reason`
-2. Some rows have NULL values (incomplete profile creation)
-3. Profiles aren't being created automatically when users sign up
+## ⚠️ Important: Database Schema Clarification
 
-## Solution (10 minutes)
+**DO NOT add email to profiles table.** Here's the correct schema:
+
+| Table | Purpose | Contains |
+|-------|---------|----------|
+| `auth.users` | Supabase managed auth | email, password, created_at, updated_at |
+| `public.profiles` | User metadata | id, username, full_name, avatar_url, bio, location, phone, gender, role, suspended_at, suspension_reason, etc. |
+
+Email comes from `auth.users`, **NOT** from `profiles`.
+
+Problem and Solution:
+
+**Problem:**
+1. Missing columns in profiles: `role`, `suspended_at`, `suspension_reason` (admin fields)
+2. Profiles not auto-created when users signup
+3. Admin dashboard can't fetch users because it's looking for email in the wrong place
+
+**Solution:**
+
+## Step 1: Run the Profile Fix Migration
+1. Go to **Supabase Dashboard → SQL Editor**
+2. Click **New Query**
+3. Copy all code from: `DB/fix_profiles_table.sql`
+4. Click **Run**
+
+This migration will:
+- ✅ Add admin columns: `role`, `suspended_at`, `suspension_reason`
+- ✅ Create auto-trigger to create profile when auth user signs up
+- ✅ Create a SQL view joining auth.users + profiles for admin queries
+- ✅ Set up proper RLS policies
+
+## Step 2: Set Your User as Admin
+
+Run this query:
+
+```sql
+-- First, find your auth user ID
+SELECT id, email FROM auth.users LIMIT 5;
+
+-- Then set as admin (replace ID)
+UPDATE public.profiles 
+SET role = 'admin'
+WHERE id = 'YOUR_USER_ID_HERE';
+
+-- Verify
+SELECT id, role FROM public.profiles WHERE role = 'admin';
+```
+
+## Step 3: Backend Now Properly Fetches Email
+
+The backend will:
+1. Query `public.profiles` for metadata and role/suspension fields
+2. Fetch `auth.users` separately to get email addresses
+3. Return combined user data to admin dashboard
+
+```python
+# Backend does this:
+profiles = supabase.table("profiles").select(...).execute()
+auth_users = supabase.auth.admin.list_users()  # Get all emails
+# Combine: user["email"] = auth_users_map[user["id"]]
+```
+
+## Step 4: Test New Signups
+
+When a user signs up:
+1. ✅ `auth.users` row created with email/password
+2. ✅ `public.profiles` row auto-created by trigger with username, etc.
+3. ✅ NO email in profiles (correct!)
+
+## Step 5: Refresh Admin Panel
+
+1. Log out completely
+2. Clear browser cookies
+3. Log back in
+4. ✅ Users page should now display all users with emails
+
+---
+
+## Troubleshooting
+
+### Still seeing "Failed to fetch" on admin panel
+
+**Check 1: Migration Applied**
+```sql
+-- Should return role, suspended_at, suspension_reason
+SELECT column_name FROM information_schema.columns 
+WHERE table_name = 'profiles' 
+AND column_name IN ('role', 'suspended_at', 'suspension_reason');
+```
+
+**Check 2: You are an admin**
+```sql
+SELECT email FROM auth.users WHERE id = 'YOUR_ID';
+SELECT role FROM public.profiles WHERE id = 'YOUR_ID';
+```
+Role should be 'admin'.
+
+**Check 3: Backend is running**
+```bash
+cd backend
+python -m uvicorn main:app --reload
+```
+
+**Check 4: Try a fresh login**
+- Clear ALL cookies
+- Use Incognito window
+- Log in again
+
+### Email shows as "user-xxxx@swapstyl.app" placeholder
+
+This means the backend can't fetch the user's actual email from `auth.users`. 
+
+**Fix:** Make sure Supabase service role key is configured in backend `.env`:
+```
+SUPABASE_SERVICE_KEY=your_service_role_key_here
+```
+
+---
+
+## Files Modified
+
+- ✅ `DB/fix_profiles_table.sql` - Migration with admin columns + trigger + view
+- ✅ `backend/routers/auth.py` - Don't add email to profiles, only auth.users
+- ✅ `backend/routers/admin.py` - Fetch email from auth.users, not profiles
+- ✅ This documentation
+
+---
+
+**Summary:**
+- Profiles table: metadata ONLY
+- Auth table: email/password/auth stuff
+- Admin dashboard: queries both + combines results ✅
+
 
 ### Step 1: Run the Profile Fix Migration
 1. Go to **Supabase Dashboard → SQL Editor**

@@ -218,12 +218,11 @@ async def admin_signup(request: SignupRequest):
         except:
             is_first_admin = True
         
-        # Create profile entry with email
+        # Create profile entry with metadata only (email is in auth.users, not profiles)
         try:
             profile_role = "admin" if is_first_admin else None
             profile_data = {
                 "id": user_id,
-                "email": request.email,
                 "username": request.email.split("@")[0],  # Use email prefix as default username
                 "role": profile_role,
                 "role_updated_at": datetime.utcnow().isoformat(),
