@@ -33,11 +33,23 @@ class SuspendUserPayload(BaseModel):
 # ── Middleware: Check if user is admin ──
 def check_admin(current_user=Depends(get_current_user), supabase=Depends(get_supabase)):
     """Verify user is admin."""
-    resp = supabase.table("profiles").select("role").eq("id", current_user.id).single().execute()
-    user = resp.data
-    if not user or user.get("role") not in ("admin", "moderator"):
-        raise HTTPException(status_code=403, detail="Admin access required")
-    return current_user
+    try:
+        resp = supabase.table("profiles").select("role").eq("id", current_user.id).single().execute()
+        user = resp.data
+        if not user or user.get("role") not in ("admin", "moderator"):
+            raise HTTPException(status_code=403, detail="Admin access required")
+        return current_user
+    except HTTPException:
+        raise
+    except Exception as e:
+        # More helpful error message if migrations haven't been applied
+        error_msg = str(e)
+        if "role" in error_msg or "column" in error_msg.lower():
+            raise HTTPException(
+                status_code=500, 
+                detail="Database not properly configured. Please run migrations: DB/migration_admin_system.sql"
+            )
+        raise HTTPException(status_code=500, detail=f"Admin verification failed: {error_msg}")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -151,28 +163,37 @@ def get_pending_items(
     supabase=Depends(get_supabase),
 ):
     """Get items pending manual review (ai_score < 75%)."""
-    offset = (page - 1) * page_size
-    resp = (
-        supabase.table("items")
-        .select("*, owner:owner_id(id, full_name, username, avatar_url)")
-        .eq("moderation_status", "pending_review")
-        .order("created_at", desc=True)
-        .range(offset, offset + page_size - 1)
-        .execute()
-    )
-    items = resp.data or []
-    
-    # Get total count
-    count_resp = supabase.table("items").select("id", count="exact").eq("moderation_status", "pending_review").execute()
-    total = count_resp.count or 0
+    try:
+        offset = (page - 1) * page_size
+        resp = (
+            supabase.table("items")
+            .select("*, owner:owner_id(id, full_name, username, avatar_url)")
+            .eq("moderation_status", "pending_review")
+            .order("created_at", desc=True)
+            .range(offset, offset + page_size - 1)
+            .execute()
+        )
+        items = resp.data or []
+        
+        # Get total count
+        count_resp = supabase.table("items").select("id", count="exact").eq("moderation_status", "pending_review").execute()
+        total = count_resp.count or 0
 
-    return {
-        "items": items,
-        "page": page,
-        "page_size": page_size,
-        "total": total,
-        "has_more": offset + page_size < total,
-    }
+        return {
+            "items": items,
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "has_more": offset + page_size < total,
+        }
+    except Exception as e:
+        error_msg = str(e)
+        if "column" in error_msg.lower() or "does not exist" in error_msg.lower():
+            raise HTTPException(
+                status_code=500,
+                detail="Database schema not properly configured. Please apply migration: DB/migration_admin_system.sql"
+            )
+        raise HTTPException(status_code=500, detail=f"Failed to fetch items: {error_msg}")
 
 
 @router.post("/items/{item_id}/moderate")
@@ -420,29 +441,38 @@ def get_users(
     supabase=Depends(get_supabase),
 ):
     """Get users list."""
-    offset = (page - 1) * page_size
-    
-    query = supabase.table("profiles").select("id, full_name, email, avatar_url, role, created_at, suspended_at, suspension_reason")
-    
-    if suspended_only:
-        query = query.neq("suspended_at", None)
-    
-    resp = query.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
-    users = resp.data or []
+    try:
+        offset = (page - 1) * page_size
+        
+        query = supabase.table("profiles").select("id, full_name, email, avatar_url, role, created_at, suspended_at, suspension_reason")
+        
+        if suspended_only:
+            query = query.neq("suspended_at", None)
+        
+        resp = query.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
+        users = resp.data or []
 
-    # Get total
-    count_resp = supabase.table("profiles").select("id", count="exact")
-    if suspended_only:
-        count_resp = count_resp.neq("suspended_at", None)
-    count = count_resp.execute().count or 0
+        # Get total
+        count_resp = supabase.table("profiles").select("id", count="exact")
+        if suspended_only:
+            count_resp = count_resp.neq("suspended_at", None)
+        count = count_resp.execute().count or 0
 
-    return {
-        "users": users,
-        "page": page,
-        "page_size": page_size,
-        "total": count,
-        "has_more": offset + page_size < count,
-    }
+        return {
+            "users": users,
+            "page": page,
+            "page_size": page_size,
+            "total": count,
+            "has_more": offset + page_size < count,
+        }
+    except Exception as e:
+        error_msg = str(e)
+        if "column" in error_msg.lower() or "does not exist" in error_msg.lower():
+            raise HTTPException(
+                status_code=500,
+                detail="Database schema not properly configured. Please apply migration: DB/migration_admin_system.sql"
+            )
+        raise HTTPException(status_code=500, detail=f"Failed to fetch users: {error_msg}")
 
 
 @router.get("/logs")
@@ -453,25 +483,34 @@ def get_moderation_logs(
     supabase=Depends(get_supabase),
 ):
     """Get moderation logs (audit trail)."""
-    offset = (page - 1) * page_size
-    
-    resp = (
-        supabase.table("moderation_log")
-        .select("*, moderator:moderator_id(id, full_name, email)")
-        .order("created_at", desc=True)
-        .range(offset, offset + page_size - 1)
-        .execute()
-    )
-    logs = resp.data or []
+    try:
+        offset = (page - 1) * page_size
+        
+        resp = (
+            supabase.table("moderation_log")
+            .select("*, moderator:moderator_id(id, full_name, email)")
+            .order("created_at", desc=True)
+            .range(offset, offset + page_size - 1)
+            .execute()
+        )
+        logs = resp.data or []
 
-    # Get total
-    count_resp = supabase.table("moderation_log").select("id", count="exact").execute()
-    total = count_resp.count or 0
+        # Get total
+        count_resp = supabase.table("moderation_log").select("id", count="exact").execute()
+        total = count_resp.count or 0
 
-    return {
-        "logs": logs,
-        "page": page,
-        "page_size": page_size,
-        "total": total,
-        "has_more": offset + page_size < total,
-    }
+        return {
+            "logs": logs,
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "has_more": offset + page_size < total,
+        }
+    except Exception as e:
+        error_msg = str(e)
+        if "does not exist" in error_msg.lower():
+            raise HTTPException(
+                status_code=500,
+                detail="Moderation log table not found. Please apply migration: DB/migration_admin_system.sql"
+            )
+        raise HTTPException(status_code=500, detail=f"Failed to fetch logs: {error_msg}")
