@@ -580,22 +580,22 @@ class VerifyConfirmModel(BaseModel):
 )
 async def request_verification(request: VerifyRequestModel):
     """
-    Send an OTP verification email via Supabase Auth.
-    The user is expected to enter the code received in the /verify/confirm step.
+    Send an OTP via Supabase Auth sign_in_with_otp (email OTP mode).
+    The user enters the code in /verify/confirm.
     """
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase client not configured")
 
     try:
-        # Resend signup OTP / email confirmation via Supabase Auth
-        supabase.auth.resend(
-            email=request.email,
-            type="signup",
-            options={"redirect_to": "swapstyl://verify"}
-        )
-        return {"success": True, "message": "Verification email sent. Please check your inbox."}
+        supabase.auth.sign_in_with_otp({
+            "email": request.email,
+            "options": {
+                "should_create_user": False,   # only send to existing users
+            },
+        })
+        return {"success": True, "message": "Verification code sent. Please check your email."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to send verification email: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to send verification code: {str(e)}")
 
 
 @router.post(

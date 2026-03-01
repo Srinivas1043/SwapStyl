@@ -172,10 +172,10 @@ def get_messages(
     uid = current_user.id
 
     # Verify participant
-    conv_resp = supabase.table("conversations").select("user1_id, user2_id").eq("id", conv_id).single().execute()
+    conv_resp = supabase.table("conversations").select("user1_id, user2_id").eq("id", conv_id).limit(1).execute()
     if not conv_resp.data:
         raise HTTPException(status_code=404)
-    conv = conv_resp.data
+    conv = conv_resp.data[0]
     if conv["user1_id"] != uid and conv["user2_id"] != uid:
         raise HTTPException(status_code=403)
 
