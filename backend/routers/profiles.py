@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from dependencies import get_supabase, get_current_user, get_authenticated_client
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
@@ -52,6 +52,58 @@ def get_my_profile(current_user = Depends(get_current_user), supabase = Depends(
     profile["eco_points"] = profile.get("eco_points") or 0
 
     return profile
+
+
+@router.delete("/me")
+def delete_my_account(
+    current_user=Depends(get_current_user),
+    supabase=Depends(get_authenticated_client)
+):
+    """Soft-delete the current user's account. Sets is_active=False and schedules deletion 14 days from now."""
+    now = datetime.now(timezone.utc)
+    scheduled = now + timedelta(days=14)
+
+    response = (
+        supabase.table("profiles")
+        .update({
+            "is_active": False,
+            "deleted_at": now.isoformat(),
+            "scheduled_deletion_at": scheduled.isoformat(),
+        })
+        .eq("id", current_user.id)
+        .execute()
+    )
+
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    return {
+        "message": "Account scheduled for deletion.",
+        "scheduled_deletion_at": scheduled.isoformat(),
+    }
+
+
+@router.post("/me/restore")
+def restore_my_account(
+    current_user=Depends(get_current_user),
+    supabase=Depends(get_authenticated_client)
+):
+    """Cancel a pending account deletion and restore the account to active status."""
+    response = (
+        supabase.table("profiles")
+        .update({
+            "is_active": True,
+            "deleted_at": None,
+            "scheduled_deletion_at": None,
+        })
+        .eq("id", current_user.id)
+        .execute()
+    )
+
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    return {"message": "Account restored successfully."}
 
 @router.get("/{user_id}")
 def get_user_profile(user_id: str, supabase = Depends(get_supabase)):

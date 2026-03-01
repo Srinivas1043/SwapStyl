@@ -286,7 +286,7 @@ export default function ChatScreen() {
 
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
-            allowsEditing: true, 
+            allowsEditing: true,
             quality: 0.7,
         });
 
@@ -301,7 +301,7 @@ export default function ChatScreen() {
                 // Use fetch to get ArrayBuffer - more compatible with newer Expo versions
                 const response = await fetch(uri);
                 const arrayBuffer = await response.arrayBuffer();
-                
+
                 const { data, error } = await supabase.storage
                     .from('chat')
                     .upload(fileName, arrayBuffer, {
@@ -315,7 +315,7 @@ export default function ChatScreen() {
                 }
 
                 const { data: { publicUrl } } = supabase.storage.from('chat').getPublicUrl(data.path);
-                
+
                 // Send the message with type='image'
                 await sendMessage('📷 Image', 'image', { url: publicUrl, width: asset.width, height: asset.height });
 
@@ -443,7 +443,11 @@ export default function ChatScreen() {
                     <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
                         <Ionicons name="chevron-back" size={24} color={Colors.secondary.deepMaroon} />
                     </TouchableOpacity>
-                    <View style={s.headerInfo}>
+                    <TouchableOpacity
+                        style={s.headerInfo}
+                        onPress={() => other?.id && router.push(`/profile/${other.id}`)}
+                        activeOpacity={0.8}
+                    >
                         {other?.avatar_url
                             ? <Image source={{ uri: other.avatar_url }} style={s.headerAvatar} />
                             : <View style={[s.headerAvatar, s.headerAvatarFallback]}>
@@ -451,10 +455,17 @@ export default function ChatScreen() {
                             </View>
                         }
                         <View>
-                            <Text style={s.headerName}>{other?.full_name || other?.username}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                <Text style={s.headerName}>{other?.full_name || other?.username}</Text>
+                                {other?.is_verified && (
+                                    <View style={s.headerVerifiedBadge}>
+                                        <Text style={{ color: '#fff', fontSize: 8, fontWeight: '700' }}>✓</Text>
+                                    </View>
+                                )}
+                            </View>
                             {item?.title && <Text style={s.headerItem} numberOfLines={1}>re: {item.title}</Text>}
                         </View>
-                    </View>
+                    </TouchableOpacity>
                     <TouchableOpacity
                         style={s.cancelBtn}
                         onPress={() => Alert.alert('Cancel deal?', 'This cannot be undone.', [
@@ -572,6 +583,14 @@ const s = StyleSheet.create({
     headerAvatar: { width: 38, height: 38, borderRadius: 19 },
     headerAvatarFallback: { backgroundColor: Colors.secondary.deepMaroon, alignItems: 'center', justifyContent: 'center' },
     headerAvatarInitial: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    headerVerifiedBadge: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: '#1DA1F2',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     headerName: { fontWeight: '700', fontSize: 15, color: Colors.secondary.deepMaroon },
     headerItem: { fontSize: 11, color: '#888', maxWidth: SCREEN_W - 160 },
     cancelBtn: { padding: 4 },

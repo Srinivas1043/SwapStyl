@@ -72,6 +72,27 @@ export default function ProfileScreen() {
         );
     }
 
+    async function restoreAccount() {
+        Alert.alert(
+            'Restore Account',
+            'Your account will be restored and the scheduled deletion will be cancelled.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Restore',
+                    onPress: async () => {
+                        try {
+                            await authenticatedFetch('/profiles/me/restore', { method: 'POST' });
+                            await loadProfile();
+                        } catch (e: any) {
+                            setBannerMsg(friendlyError(e?.message || 'Restore failed'));
+                        }
+                    },
+                },
+            ]
+        );
+    }
+
     if (loading) {
         return (
             <SafeAreaView style={styles.safeArea}>
@@ -95,11 +116,27 @@ export default function ProfileScreen() {
         { icon: ICONS.swapHistory, label: i18n.t('history'), route: '/history' },
         { icon: ICONS.reviews, label: 'Reviews', route: '/reviews/me' },
         { icon: ICONS.settings, label: i18n.t('settings'), route: '/settings' },
+        ...(!profile?.is_verified ? [{ icon: '✓', label: 'Get Verified', route: '/verify-account' }] : []),
     ];
 
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBanner message={bannerMsg} onDismiss={() => setBannerMsg(null)} />
+
+            {/* ── Deletion warning banner ── */}
+            {profile?.is_active === false && (
+                <View style={styles.deletionBanner}>
+                    <Ionicons name="warning-outline" size={18} color="#fff" />
+                    <Text style={styles.deletionBannerText} numberOfLines={2}>
+                        Account deletion scheduled for{' '}
+                        {new Date(profile.scheduled_deletion_at).toLocaleDateString()}.
+                    </Text>
+                    <TouchableOpacity style={styles.restoreBtn} onPress={restoreAccount}>
+                        <Text style={styles.restoreBtnText}>Restore</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
             <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.container}
@@ -117,9 +154,16 @@ export default function ProfileScreen() {
                     </View>
 
                     <View style={styles.headerInfo}>
-                        <Text style={styles.name}>
-                            {profile?.full_name || 'Your Name'}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Text style={styles.name}>
+                                {profile?.full_name || 'Your Name'}
+                            </Text>
+                            {profile?.is_verified && (
+                                <View style={styles.verifiedBadge}>
+                                    <Ionicons name="checkmark" size={11} color="#fff" />
+                                </View>
+                            )}
+                        </View>
                         {profile?.username ? (
                             <Text style={styles.username}>@{profile.username}</Text>
                         ) : null}
@@ -418,5 +462,42 @@ const styles = StyleSheet.create({
     },
     logoutLabel: {
         color: Colors.secondary.deepMaroon,
+    },
+
+    // ── Deletion Banner ───────────────────────────────────────────
+    deletionBanner: {
+        backgroundColor: '#E74C3C',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        gap: 8,
+    },
+    deletionBannerText: {
+        flex: 1,
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: '500',
+    },
+    restoreBtn: {
+        backgroundColor: 'rgba(255,255,255,0.25)',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+    },
+    restoreBtnText: {
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: '700',
+    },
+
+    // ── Verified Badge ────────────────────────────────────────────
+    verifiedBadge: {
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: '#1DA1F2',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

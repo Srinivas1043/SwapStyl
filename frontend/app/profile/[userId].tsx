@@ -124,6 +124,14 @@ export default function MatchedUserProfileScreen() {
                     </View>
 
                     <Text style={styles.name}>{profile?.full_name || 'User'}</Text>
+                    {profile?.is_verified && (
+                        <View style={styles.verifiedRow}>
+                            <View style={styles.verifiedBadge}>
+                                <Ionicons name="checkmark" size={11} color="#fff" />
+                            </View>
+                            <Text style={styles.verifiedText}>Verified</Text>
+                        </View>
+                    )}
                     {profile?.location && (
                         <View style={styles.locationRow}>
                             <Ionicons name="location-outline" size={14} color={Colors.neutrals.gray} />
@@ -149,7 +157,7 @@ export default function MatchedUserProfileScreen() {
 
                     {/* Action buttons */}
                     <View style={styles.actionRow}>
-                        <Pressable 
+                        <Pressable
                             style={styles.primaryBtn}
                             onPress={() => router.push(`/chat/${userId}`)}
                         >
@@ -221,6 +229,11 @@ export default function MatchedUserProfileScreen() {
                                     ) : (
                                         <View style={[styles.wardrobeImage, styles.wardrobeImageFallback]}>
                                             <Ionicons name="shirt-outline" size={24} color={Colors.neutrals.gray} />
+                                        </View>
+                                    )}
+                                    {item.is_verified && (
+                                        <View style={styles.productVerifiedBadge}>
+                                            <Text style={styles.productVerifiedText}>🛡</Text>
                                         </View>
                                     )}
                                     <Text style={styles.wardrobeTitle} numberOfLines={1}>{item.title}</Text>
@@ -445,6 +458,7 @@ const styles = StyleSheet.create({
     wardrobeSlot: {
         width: '31%',
         alignItems: 'center',
+        position: 'relative',
     },
     wardrobeImage: {
         width: '100%',
@@ -462,6 +476,37 @@ const styles = StyleSheet.create({
         color: Colors.secondary.deepMaroon,
         fontWeight: '500',
         textAlign: 'center',
+    },
+    productVerifiedBadge: {
+        position: 'absolute',
+        top: 6,
+        right: 2,
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        borderRadius: 10,
+        width: 22,
+        height: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    productVerifiedText: { fontSize: 12 },
+    verifiedRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 16,
+    },
+    verifiedBadge: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: '#1DA1F2',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    verifiedText: {
+        fontSize: 13,
+        color: '#1DA1F2',
+        fontWeight: '600',
     },
     emptyText: {
         fontSize: 14,

@@ -555,3 +555,87 @@ async def health_check():
         "service": "email-authentication",
         "supabase_configured": supabase is not None
     }
+
+
+# ─────────────────────────────────────────────────────────────────
+# USER VERIFICATION (OTP-BASED)
+# ─────────────────────────────────────────────────────────────────
+
+class VerifyRequestModel(BaseModel):
+    """Request a verification OTP email"""
+    email: str
+
+
+class VerifyConfirmModel(BaseModel):
+    """Confirm OTP and mark account as verified"""
+    email: str
+    token: str          # 6-digit OTP from email
+    user_id: str        # so we can update the correct profile row
+
+
+@router.post(
+    "/verify/request",
+    summary="Request email verification OTP",
+    description="Sends a 6-digit OTP to the user's email to verify their account"
+)
+async def request_verification(request: VerifyRequestModel):
+    """
+    Send an OTP verification email via Supabase Auth.
+    The user is expected to enter the code received in the /verify/confirm step.
+    """
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase client not configured")
+
+    try:
+        # Resend signup OTP / email confirmation via Supabase Auth
+        supabase.auth.resend(
+            email=request.email,
+            type="signup",
+            options={"redirect_to": "swapstyl://verify"}
+        )
+        return {"success": True, "message": "Verification email sent. Please check your inbox."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send verification email: {str(e)}")
+
+
+@router.post(
+    "/verify/confirm",
+    summary="Confirm OTP and mark user as verified",
+    description="Verify the 6-digit OTP and set is_verified=true on the user profile"
+)
+async def confirm_verification(request: VerifyConfirmModel):
+    """
+    Verify the OTP token via Supabase Auth and, on success,
+    mark the user profile row as is_verified=True.
+    """
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase client not configured")
+
+    try:
+        # Verify the OTP using Supabase Auth
+        auth_response = supabase.auth.verify_otp({
+            "email": request.email,
+            "token": request.token,
+            "type": "email",
+        })
+
+        if not auth_response or not auth_response.user:
+            raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+
+        # Mark profile as verified in DB
+        now = datetime.utcnow().isoformat()
+        supabase.table("profiles").update({
+            "is_verified": True,
+            "verified_at": now,
+        }).eq("id", request.user_id).execute()
+
+        return {
+            "success": True,
+            "message": "Account verified successfully! Your verified badge is now active.",
+            "verified_at": now,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Verification failed: {str(e)}")

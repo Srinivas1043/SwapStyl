@@ -22,6 +22,7 @@ interface Owner { id: string; full_name: string; username: string; avatar_url: s
 interface Item {
     id: string; title: string; brand: string; size: string; color: string;
     condition: string; category: string; description: string; images: string[];
+    is_verified?: boolean;
     profiles: Owner;
 }
 interface Filters {
@@ -43,11 +44,12 @@ const CONDITION_OPTIONS = ['New with tags', 'New without tags', 'Good', 'Fair', 
 // ─── SwipeCard component ──────────────────────────────────────────────────────
 function SwipeCard({
     item, onSwipeLeft, onSwipeRight, onWishlistToggle,
-    isWishlisted, onCardTap, isTop,
+    isWishlisted, onCardTap, isTop, router,
 }: {
     item: Item; onSwipeLeft: () => void; onSwipeRight: () => void;
     onWishlistToggle: () => void; isWishlisted: boolean;
     onCardTap: () => void; isTop: boolean;
+    router: ReturnType<typeof useRouter>;
 }) {
     const position = useRef(new Animated.ValueXY()).current;
     const [swipeDir, setSwipeDir] = useState<'left' | 'right' | null>(null);
@@ -118,8 +120,12 @@ function SwipeCard({
                 <Ionicons name="close" size={34} color="#fff" />
             </Animated.View>
 
-            {/* Owner — top left minimal pill */}
-            <View style={styles.ownerChip}>
+            {/* Owner — top left tappable pill */}
+            <TouchableOpacity
+                style={styles.ownerChip}
+                activeOpacity={0.8}
+                onPress={() => item.profiles?.id && router.push(`/profile/${item.profiles.id}`)}
+            >
                 {item.profiles?.avatar_url
                     ? <Image source={{ uri: item.profiles.avatar_url }} style={styles.ownerAvatarImg} />
                     : <View style={styles.ownerAvatarFallback}><Ionicons name="person" size={11} color="#fff" /></View>
@@ -127,7 +133,15 @@ function SwipeCard({
                 <Text style={styles.ownerName} numberOfLines={1}>
                     {item.profiles?.full_name || item.profiles?.username || 'Unknown'}
                 </Text>
-            </View>
+            </TouchableOpacity>
+
+            {/* Product verified badge — top right above wishlist */}
+            {item.is_verified && (
+                <View style={styles.productVerifiedBadge}>
+                    <Text style={styles.productVerifiedText}>🛡</Text>
+                    <Text style={styles.productVerifiedLabel}>Verified</Text>
+                </View>
+            )}
 
             {/* Wishlist — top right */}
             <TouchableOpacity style={styles.wishlistBtn} onPress={onWishlistToggle} activeOpacity={0.8}>
@@ -275,7 +289,7 @@ function FilterPanel({ visible, filters, onChange, onApply, onClose }: {
 // ─── Item Detail Sheet ─────────────────────────────────────────────────────────
 function ItemDetailSheet({ item, visible, onClose }: { item: Item | null; visible: boolean; onClose: () => void; }) {
     if (!item) return null;
-    
+
     // Ensure item.images is an array to prevent errors
     const images = Array.isArray(item.images) ? item.images : [];
 
@@ -504,6 +518,7 @@ export default function SwapScreen() {
                                 key={topItem.id}
                                 item={topItem}
                                 isTop
+                                router={router}
                                 isWishlisted={wishlisted.has(topItem.id)}
                                 onSwipeLeft={() => handleSwipe(topItem, 'left')}
                                 onSwipeRight={() => handleSwipe(topItem, 'right')}
@@ -594,6 +609,17 @@ const styles = StyleSheet.create({
         alignItems: 'center', justifyContent: 'center',
     },
     ownerName: { color: '#fff', fontWeight: '600', fontSize: 12, maxWidth: 120 },
+
+    // Product verified badge
+    productVerifiedBadge: {
+        position: 'absolute', top: 56, right: 16,
+        flexDirection: 'row', alignItems: 'center', gap: 4,
+        backgroundColor: 'rgba(0,0,0,0.45)',
+        borderRadius: 14, paddingHorizontal: 8, paddingVertical: 5,
+        borderWidth: 0.5, borderColor: 'rgba(255,215,0,0.5)',
+    },
+    productVerifiedText: { fontSize: 12 },
+    productVerifiedLabel: { color: '#FFD700', fontWeight: '700', fontSize: 10 },
 
     // Wishlist btn
     wishlistBtn: {

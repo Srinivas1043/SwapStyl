@@ -90,20 +90,36 @@ export default function ChatsScreen() {
                 activeOpacity={0.75}
                 onPress={() => router.push(`/chat/${conv.id}`)}
             >
-                {/* User avatar on the left */}
-                <View style={s.avatarWrapper}>
+                {/* User avatar — tappable to see their profile */}
+                <TouchableOpacity
+                    style={s.avatarWrapper}
+                    onPress={() => router.push(`/profile/${other?.id}`)}
+                    activeOpacity={0.8}
+                >
                     {other?.avatar_url
                         ? <Image source={{ uri: other.avatar_url }} style={s.avatar} resizeMode="cover" />
                         : <View style={[s.avatar, s.avatarFallback]}>
                             <Text style={s.avatarInitial}>{(other?.full_name || '?')[0].toUpperCase()}</Text>
                         </View>
                     }
-                </View>
+                    {other?.is_verified && (
+                        <View style={s.verifiedDot}>
+                            <Text style={s.verifiedDotText}>✓</Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
 
                 {/* Content */}
                 <View style={s.content}>
                     <View style={s.topRow}>
-                        <Text style={s.name} numberOfLines={1}>{other?.full_name || other?.username || 'Unknown'}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 }}>
+                            <Text style={s.name} numberOfLines={1}>{other?.full_name || other?.username || 'Unknown'}</Text>
+                            {other?.is_verified && (
+                                <View style={s.verifiedBadgeInline}>
+                                    <Text style={{ color: '#fff', fontSize: 8, fontWeight: '700' }}>✓</Text>
+                                </View>
+                            )}
+                        </View>
                         <Text style={s.time}>{lastMsg ? timeAgo(lastMsg.created_at) : ''}</Text>
                     </View>
                     <View style={s.bottomRow}>
@@ -184,10 +200,34 @@ const s = StyleSheet.create({
         width: 56, height: 56, borderRadius: 28,
         overflow: 'hidden', flexShrink: 0,
         backgroundColor: '#F0F0F0',
+        position: 'relative',
     },
     avatar: { width: 56, height: 56 },
     avatarFallback: { backgroundColor: Colors.secondary.deepMaroon, width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
     avatarInitial: { color: '#fff', fontSize: 20, fontWeight: '700' },
+    verifiedDot: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        backgroundColor: '#1DA1F2',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1.5,
+        borderColor: '#fff',
+    },
+    verifiedDotText: { color: '#fff', fontSize: 8, fontWeight: '700' },
+    verifiedBadgeInline: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: '#1DA1F2',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+    },
     content: { flex: 1, gap: 4 },
     topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     name: { fontSize: 15, fontWeight: '700', color: Colors.secondary.deepMaroon, flex: 1 },

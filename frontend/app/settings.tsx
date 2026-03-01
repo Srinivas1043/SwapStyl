@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react';
 import i18n from '../lib/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLanguage } from '../context/LanguageContext';
+import { authenticatedFetch } from '../lib/api';
+import { supabase } from '../lib/supabase';
 
 export default function SettingsScreen() {
     const router = useRouter();
@@ -14,6 +16,45 @@ export default function SettingsScreen() {
     const [matchAlerts, setMatchAlerts] = useState(true);
     const [promotions, setPromotions] = useState(false);
     const { locale, setLocale } = useLanguage();
+    const [deleting, setDeleting] = useState(false);
+
+    const handleDeleteAccount = () => {
+        Alert.alert(
+            '⚠️ Delete Account',
+            'Your account will be deactivated immediately. All your data will be permanently deleted after 14 days.\n\nYou can restore your account by logging in within the 14-day window.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete My Account',
+                    style: 'destructive',
+                    onPress: () => {
+                        Alert.alert(
+                            'Are you absolutely sure?',
+                            'This will schedule your account for permanent deletion in 14 days. You can restore it within that period.',
+                            [
+                                { text: 'Cancel', style: 'cancel' },
+                                {
+                                    text: 'Yes, Delete',
+                                    style: 'destructive',
+                                    onPress: async () => {
+                                        try {
+                                            setDeleting(true);
+                                            await authenticatedFetch('/profiles/me', { method: 'DELETE' });
+                                            await supabase.auth.signOut();
+                                        } catch (e: any) {
+                                            Alert.alert('Error', e?.message || 'Failed to delete account. Please try again.');
+                                        } finally {
+                                            setDeleting(false);
+                                        }
+                                    },
+                                },
+                            ]
+                        );
+                    },
+                },
+            ]
+        );
+    };
 
     const changeLanguage = () => {
         const options = ['English', 'Nederlands', 'Italiano', 'Cancel'];
@@ -133,6 +174,23 @@ export default function SettingsScreen() {
                         </View>
                     </View>
                 ))}
+
+                {/* ── Danger Zone ── */}
+                <View style={s.section}>
+                    <Text style={s.sectionTitle}>Account</Text>
+                    <View style={s.card}>
+                        <TouchableOpacity
+                            style={s.row}
+                            activeOpacity={0.7}
+                            onPress={handleDeleteAccount}
+                            disabled={deleting}
+                        >
+                            <Ionicons name="trash-outline" size={18} color="#E74C3C" style={{ marginRight: 10 }} />
+                            <Text style={[s.rowLabel, { color: '#E74C3C', flex: 1 }]}>Delete Account</Text>
+                            <Ionicons name="chevron-forward" size={18} color="#E74C3C" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
 
                 <View style={{ height: 40 }} />
             </ScrollView>
