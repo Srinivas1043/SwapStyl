@@ -85,16 +85,13 @@ export default function ChatsScreen() {
             : 'Say hello!';
 
         return (
-            <TouchableOpacity
-                style={s.row}
-                activeOpacity={0.75}
-                onPress={() => router.push(`/chat/${conv.id}`)}
-            >
-                {/* User avatar — tappable to see their profile */}
+            <View style={s.rowWrapper}>
+                {/* Avatar — SEPARATE from the chat row touch area */}
                 <TouchableOpacity
                     style={s.avatarWrapper}
-                    onPress={() => router.push(`/profile/${other?.id}`)}
+                    onPress={() => other?.id && router.push(`/profile/${other.id}`)}
                     activeOpacity={0.8}
+                    hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                 >
                     {other?.avatar_url
                         ? <Image source={{ uri: other.avatar_url }} style={s.avatar} resizeMode="cover" />
@@ -109,31 +106,38 @@ export default function ChatsScreen() {
                     )}
                 </TouchableOpacity>
 
-                {/* Content */}
-                <View style={s.content}>
-                    <View style={s.topRow}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 }}>
-                            <Text style={s.name} numberOfLines={1}>{other?.full_name || other?.username || 'Unknown'}</Text>
-                            {other?.is_verified && (
-                                <View style={s.verifiedBadgeInline}>
-                                    <Text style={{ color: '#fff', fontSize: 8, fontWeight: '700' }}>✓</Text>
+                {/* Chat content row — tap opens chat */}
+                <TouchableOpacity
+                    style={s.row}
+                    activeOpacity={0.75}
+                    onPress={() => router.push(`/chat/${conv.id}`)}
+                >
+                    {/* Content */}
+                    <View style={s.content}>
+                        <View style={s.topRow}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 }}>
+                                <Text style={s.name} numberOfLines={1}>{other?.full_name || other?.username || 'Unknown'}</Text>
+                                {other?.is_verified && (
+                                    <View style={s.verifiedBadgeInline}>
+                                        <Text style={{ color: '#fff', fontSize: 8, fontWeight: '700' }}>✓</Text>
+                                    </View>
+                                )}
+                            </View>
+                            <Text style={s.time}>{lastMsg ? timeAgo(lastMsg.created_at) : ''}</Text>
+                        </View>
+                        <View style={s.bottomRow}>
+                            <Text style={[s.preview, unread > 0 && s.previewBold]} numberOfLines={1}>
+                                {previewText}
+                            </Text>
+                            {unread > 0 && (
+                                <View style={s.unreadBadge}>
+                                    <Text style={s.unreadText}>{unread > 9 ? '9+' : unread}</Text>
                                 </View>
                             )}
                         </View>
-                        <Text style={s.time}>{lastMsg ? timeAgo(lastMsg.created_at) : ''}</Text>
                     </View>
-                    <View style={s.bottomRow}>
-                        <Text style={[s.preview, unread > 0 && s.previewBold]} numberOfLines={1}>
-                            {previewText}
-                        </Text>
-                        {unread > 0 && (
-                            <View style={s.unreadBadge}>
-                                <Text style={s.unreadText}>{unread > 9 ? '9+' : unread}</Text>
-                            </View>
-                        )}
-                    </View>
-                </View>
-            </TouchableOpacity>
+                </TouchableOpacity>
+            </View>
         );
     }
 
@@ -190,19 +194,28 @@ const s = StyleSheet.create({
     emptyTitle: { fontSize: 18, fontWeight: '700', color: Colors.secondary.deepMaroon },
     emptySubtitle: { fontSize: 14, color: '#999', textAlign: 'center', maxWidth: 220 },
 
-    row: {
-        flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: 16, paddingVertical: 12,
+    rowWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingLeft: 16,
         backgroundColor: '#fff',
+        gap: 12,
+    },
+    row: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingRight: 16,
+        paddingVertical: 12,
         gap: 12,
     },
     avatarWrapper: {
         width: 56, height: 56, borderRadius: 28,
-        overflow: 'hidden', flexShrink: 0,
+        overflow: 'visible', flexShrink: 0,
         backgroundColor: '#F0F0F0',
         position: 'relative',
     },
-    avatar: { width: 56, height: 56 },
+    avatar: { width: 56, height: 56, borderRadius: 28 },
     avatarFallback: { backgroundColor: Colors.secondary.deepMaroon, width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
     avatarInitial: { color: '#fff', fontSize: 20, fontWeight: '700' },
     verifiedDot: {

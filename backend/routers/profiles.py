@@ -108,7 +108,10 @@ def restore_my_account(
 @router.get("/{user_id}")
 def get_user_profile(user_id: str, supabase = Depends(get_supabase)):
     """Get a public user profile (limited info for matched users)."""
-    response = supabase.table("profiles").select("id, full_name, username, avatar_url, location, latitude, longitude, eco_points, created_at").eq("id", user_id).single().execute()
+    response = supabase.table("profiles").select(
+        "id, full_name, username, avatar_url, location, latitude, longitude, "
+        "eco_points, created_at, is_verified, verified_at"
+    ).eq("id", user_id).single().execute()
     if not response.data:
         raise HTTPException(status_code=404, detail="Profile not found")
     

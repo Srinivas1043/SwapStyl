@@ -36,13 +36,14 @@ def list_conversations(
     """Return all conversations for current user, enriched with last message + other user profile + item."""
     uid = current_user.id
 
-    # Fetch conversations where I am user1 or user2
+    # Fetch conversations where I am user1 or user2, joining item from item_id
     resp = (
         supabase.table("conversations")
         .select(
             "*, "
-            "user1:user1_id(id, full_name, username, avatar_url, location, rating), "
-            "user2:user2_id(id, full_name, username, avatar_url, location, rating)"
+            "item:item_id(id, title, images, brand, size, condition, is_verified), "
+            "user1:user1_id(id, full_name, username, avatar_url, location, rating, is_verified), "
+            "user2:user2_id(id, full_name, username, avatar_url, location, rating, is_verified)"
         )
         .or_(f"user1_id.eq.{uid},user2_id.eq.{uid}")
         .order("last_message_at", desc=True)
@@ -53,7 +54,7 @@ def list_conversations(
     # For each conversation, fetch last message + compute unread
     result = []
     for conv in convs:
-        # Last message (includes metadata with item info)
+        # Last message
         msg_resp = (
             supabase.table("messages")
             .select("id, content, type, sender_id, created_at, is_deleted, metadata")
@@ -63,11 +64,6 @@ def list_conversations(
             .execute()
         )
         last_msg = (msg_resp.data or [None])[0]
-        
-        # Extract item from last message metadata
-        item = None
-        if last_msg and last_msg.get("metadata"):
-            item = last_msg.get("metadata")
 
         # Determine "other" user
         other = conv["user2"] if conv["user1_id"] == uid else conv["user1"]
@@ -77,7 +73,7 @@ def list_conversations(
             **conv,
             "last_message": last_msg,
             "other_user": other,
-            "item": item,
+            "item": conv.get("item"),   # joined directly from item_id FK
             "my_unread": conv.get(my_unread_field, 0),
         })
 
