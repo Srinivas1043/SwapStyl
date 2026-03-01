@@ -1,64 +1,36 @@
 import { useState } from 'react';
 import {
-    View, Text, StyleSheet, TextInput, TouchableOpacity,
-    ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView,
+    View, Text, StyleSheet, TouchableOpacity,
+    ActivityIndicator, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
-import { supabase } from '../lib/supabase';
 import { authenticatedFetch } from '../lib/api';
 
-type Step = 'email' | 'otp' | 'success';
+type Step = 'start' | 'success' | 'unconfirmed';
 
 export default function VerifyAccountScreen() {
     const router = useRouter();
-    const [step, setStep] = useState<Step>('email');
-    const [email, setEmail] = useState('');
-    const [otp, setOtp] = useState('');
+    const [step, setStep] = useState<Step>('start');
     const [loading, setLoading] = useState(false);
-
-    async function handleSendCode() {
-        if (!email.trim()) {
-            Alert.alert('Error', 'Please enter your email address.');
-            return;
-        }
-        setLoading(true);
-        try {
-            await authenticatedFetch('/auth/verify/request', {
-                method: 'POST',
-                body: JSON.stringify({ email: email.trim().toLowerCase() }),
-            });
-            setStep('otp');
-        } catch (e: any) {
-            Alert.alert('Error', e?.message || 'Failed to send verification code. Please try again.');
-        } finally {
-            setLoading(false);
-        }
-    }
+    const [message, setMessage] = useState('');
 
     async function handleVerify() {
-        if (otp.trim().length < 6) {
-            Alert.alert('Error', 'Please enter the 6-digit code from your email.');
-            return;
-        }
         setLoading(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Not authenticated');
+            const res = await authenticatedFetch('/auth/verify/request', { method: 'POST' });
 
-            await authenticatedFetch('/auth/verify/confirm', {
-                method: 'POST',
-                body: JSON.stringify({
-                    email: email.trim().toLowerCase(),
-                    token: otp.trim(),
-                    user_id: user.id,
-                }),
-            });
-            setStep('success');
+            if (res?.auto_verified) {
+                setStep('success');
+            } else {
+                setMessage(res?.message || 'Could not verify. Please try again.');
+                setStep('unconfirmed');
+            }
         } catch (e: any) {
-            Alert.alert('Invalid Code', e?.message || 'The code is incorrect or expired. Please try again.');
+            setMessage(e?.message || 'Something went wrong. Please try again.');
+            setStep('unconfirmed');
         } finally {
             setLoading(false);
         }
@@ -66,126 +38,104 @@ export default function VerifyAccountScreen() {
 
     return (
         <SafeAreaView style={s.safe} edges={['top']}>
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
-                <ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
-                    {/* Header */}
-                    <View style={s.header}>
-                        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-                            <Ionicons name="chevron-back" size={24} color={Colors.secondary.deepMaroon} />
+            {/* Header */}
+            <View style={s.header}>
+                <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+                    <Ionicons name="chevron-back" size={24} color={Colors.secondary.deepMaroon} />
+                </TouchableOpacity>
+                <Text style={s.headerTitle}>Get Verified</Text>
+                <View style={{ width: 32 }} />
+            </View>
+
+            <ScrollView contentContainerStyle={s.container} showsVerticalScrollIndicator={false}>
+
+                {step === 'start' && (
+                    <View style={s.content}>
+                        {/* Badge preview */}
+                        <View style={s.card}>
+                            <View style={s.badgeCircle}>
+                                <Ionicons name="checkmark" size={36} color="#fff" />
+                            </View>
+                            <Text style={s.cardTitle}>Verified Badge</Text>
+                            <Text style={s.cardSubtitle}>
+                                Get a blue ✓ badge that appears on your profile, in chats, and next to your name everywhere in the app.
+                            </Text>
+                        </View>
+
+                        {/* How it works */}
+                        <View style={s.howBox}>
+                            <Text style={s.howTitle}>How it works</Text>
+                            {[
+                                { icon: 'mail-outline', text: 'We check if your account email is confirmed' },
+                                { icon: 'shield-checkmark-outline', text: 'If confirmed, your badge is activated instantly' },
+                                { icon: 'person-outline', text: 'Badge appears on your profile immediately' },
+                            ].map((item, i) => (
+                                <View key={i} style={s.howRow}>
+                                    <Ionicons name={item.icon as any} size={20} color={Colors.primary.forestGreen} />
+                                    <Text style={s.howText}>{item.text}</Text>
+                                </View>
+                            ))}
+                        </View>
+
+                        <TouchableOpacity
+                            style={[s.btn, loading && s.btnDisabled]}
+                            onPress={handleVerify}
+                            disabled={loading}
+                            activeOpacity={0.85}
+                        >
+                            {loading
+                                ? <ActivityIndicator color="#fff" size="small" />
+                                : <>
+                                    <Ionicons name="shield-checkmark" size={20} color="#fff" />
+                                    <Text style={s.btnText}>Verify My Account</Text>
+                                </>
+                            }
                         </TouchableOpacity>
-                        <Text style={s.headerTitle}>Get Verified</Text>
-                        <View style={{ width: 32 }} />
                     </View>
+                )}
 
-                    {step === 'email' && (
-                        <View style={s.content}>
-                            <View style={s.badgePreview}>
-                                <View style={s.badgeCircle}>
-                                    <Ionicons name="checkmark" size={32} color="#fff" />
-                                </View>
-                                <Text style={s.badgeTitle}>Verified Badge</Text>
-                                <Text style={s.badgeSubtitle}>
-                                    Verify your email to get a blue ✓ badge on your profile,
-                                    visible to everyone you interact with.
-                                </Text>
+                {step === 'success' && (
+                    <View style={s.content}>
+                        <View style={[s.card, { alignItems: 'center' }]}>
+                            <View style={[s.badgeCircle, { backgroundColor: '#27ae60' }]}>
+                                <Ionicons name="checkmark" size={44} color="#fff" />
                             </View>
-
-                            <Text style={s.label}>Your Email Address</Text>
-                            <TextInput
-                                style={s.input}
-                                value={email}
-                                onChangeText={setEmail}
-                                placeholder="you@example.com"
-                                placeholderTextColor="#BBB"
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                            />
-
-                            <TouchableOpacity
-                                style={[s.btn, loading && s.btnDisabled]}
-                                onPress={handleSendCode}
-                                disabled={loading}
-                                activeOpacity={0.8}
-                            >
-                                {loading
-                                    ? <ActivityIndicator color="#fff" size="small" />
-                                    : <Text style={s.btnText}>Send Verification Code</Text>
-                                }
-                            </TouchableOpacity>
+                            <Text style={s.cardTitle}>You're Verified! 🎉</Text>
+                            <Text style={s.cardSubtitle}>
+                                Your blue ✓ badge is now live. It's visible to everyone you chat with, match with, or browse.
+                            </Text>
                         </View>
-                    )}
 
-                    {step === 'otp' && (
-                        <View style={s.content}>
-                            <View style={s.infoBox}>
-                                <Ionicons name="mail-outline" size={28} color={Colors.primary.forestGreen} />
-                                <Text style={s.infoTitle}>Check Your Email</Text>
-                                <Text style={s.infoText}>
-                                    We sent a 6-digit code to{'\n'}
-                                    <Text style={{ fontWeight: '700' }}>{email}</Text>
-                                </Text>
+                        <TouchableOpacity
+                            style={s.btn}
+                            onPress={() => router.replace('/(tabs)/profile')}
+                            activeOpacity={0.85}
+                        >
+                            <Text style={s.btnText}>Back to Profile</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {step === 'unconfirmed' && (
+                    <View style={s.content}>
+                        <View style={[s.card, { alignItems: 'center' }]}>
+                            <View style={[s.badgeCircle, { backgroundColor: '#E74C3C' }]}>
+                                <Ionicons name="mail-unread-outline" size={36} color="#fff" />
                             </View>
-
-                            <Text style={s.label}>Enter 6-Digit Code</Text>
-                            <TextInput
-                                style={[s.input, s.otpInput]}
-                                value={otp}
-                                onChangeText={setOtp}
-                                placeholder="000000"
-                                placeholderTextColor="#BBB"
-                                keyboardType="number-pad"
-                                maxLength={6}
-                            />
-
-                            <TouchableOpacity
-                                style={[s.btn, loading && s.btnDisabled]}
-                                onPress={handleVerify}
-                                disabled={loading}
-                                activeOpacity={0.8}
-                            >
-                                {loading
-                                    ? <ActivityIndicator color="#fff" size="small" />
-                                    : <Text style={s.btnText}>Verify Account</Text>
-                                }
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={s.resendBtn}
-                                onPress={() => { setOtp(''); setStep('email'); }}
-                            >
-                                <Text style={s.resendText}>Didn't receive it? Go back and retry</Text>
-                            </TouchableOpacity>
+                            <Text style={s.cardTitle}>Email Not Confirmed</Text>
+                            <Text style={s.cardSubtitle}>{message}</Text>
                         </View>
-                    )}
 
-                    {step === 'success' && (
-                        <View style={s.content}>
-                            <View style={s.successBox}>
-                                <View style={s.badgeCircle}>
-                                    <Ionicons name="checkmark" size={40} color="#fff" />
-                                </View>
-                                <Text style={s.successTitle}>You're Verified! 🎉</Text>
-                                <Text style={s.successText}>
-                                    Your blue ✓ badge is now active on your profile and visible
-                                    to all users you chat with or match with.
-                                </Text>
-                            </View>
-
-                            <TouchableOpacity
-                                style={s.btn}
-                                onPress={() => router.replace('/(tabs)/profile')}
-                                activeOpacity={0.8}
-                            >
-                                <Text style={s.btnText}>Back to Profile</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                </ScrollView>
-            </KeyboardAvoidingView>
+                        <TouchableOpacity
+                            style={[s.btn, { backgroundColor: Colors.secondary.deepMaroon }]}
+                            onPress={() => setStep('start')}
+                            activeOpacity={0.85}
+                        >
+                            <Text style={s.btnText}>Try Again</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </ScrollView>
         </SafeAreaView>
     );
 }
@@ -194,75 +144,53 @@ const s = StyleSheet.create({
     safe: { flex: 1, backgroundColor: '#F7F5F0' },
     header: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff',
+        paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#fff',
         borderBottomWidth: 1, borderBottomColor: '#EDEDEA',
     },
     backBtn: { padding: 4 },
     headerTitle: { fontSize: 18, fontWeight: '700', color: Colors.secondary.deepMaroon },
-    container: { padding: 20, gap: 20 },
+    container: { padding: 20, paddingBottom: 40 },
     content: { gap: 16 },
 
-    // Badge preview
-    badgePreview: {
-        backgroundColor: '#fff', borderRadius: 20, padding: 24,
+    card: {
+        backgroundColor: '#fff', borderRadius: 20, padding: 28,
         alignItems: 'center', gap: 12,
         shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
+        shadowOpacity: 0.07, shadowRadius: 8, elevation: 3,
     },
     badgeCircle: {
-        width: 72, height: 72, borderRadius: 36,
+        width: 80, height: 80, borderRadius: 40,
         backgroundColor: '#1DA1F2',
         alignItems: 'center', justifyContent: 'center',
         shadowColor: '#1DA1F2', shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35, shadowRadius: 10, elevation: 6,
+        shadowOpacity: 0.35, shadowRadius: 12, elevation: 6,
+        marginBottom: 4,
     },
-    badgeTitle: { fontSize: 20, fontWeight: '800', color: Colors.secondary.deepMaroon },
-    badgeSubtitle: {
-        fontSize: 14, color: '#666', textAlign: 'center', lineHeight: 20,
-    },
-
-    // Info box (OTP step)
-    infoBox: {
-        backgroundColor: '#fff', borderRadius: 16, padding: 20,
-        alignItems: 'center', gap: 8,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
-    },
-    infoTitle: { fontSize: 17, fontWeight: '700', color: Colors.secondary.deepMaroon },
-    infoText: { fontSize: 14, color: '#555', textAlign: 'center', lineHeight: 20 },
-
-    // Success step
-    successBox: {
-        backgroundColor: '#fff', borderRadius: 20, padding: 28,
-        alignItems: 'center', gap: 14,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06, shadowRadius: 8, elevation: 3,
-    },
-    successTitle: { fontSize: 22, fontWeight: '800', color: Colors.secondary.deepMaroon },
-    successText: {
-        fontSize: 14, color: '#555', textAlign: 'center', lineHeight: 22,
-    },
-
-    // Form
-    label: { fontSize: 13, fontWeight: '600', color: '#555', marginBottom: -8 },
-    input: {
-        backgroundColor: '#fff', borderRadius: 14, paddingHorizontal: 16,
-        paddingVertical: 14, fontSize: 16, color: Colors.secondary.deepMaroon,
-        borderWidth: 1, borderColor: '#E0DDD8',
-    },
-    otpInput: {
-        fontSize: 28, fontWeight: '700', letterSpacing: 8,
+    cardTitle: {
+        fontSize: 22, fontWeight: '800', color: Colors.secondary.deepMaroon,
         textAlign: 'center',
     },
+    cardSubtitle: {
+        fontSize: 14, color: '#666', textAlign: 'center', lineHeight: 22,
+    },
 
-    // Buttons
+    howBox: {
+        backgroundColor: '#fff', borderRadius: 16, padding: 20, gap: 14,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
+    },
+    howTitle: {
+        fontSize: 14, fontWeight: '700', color: '#888',
+        textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2,
+    },
+    howRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    howText: { fontSize: 14, color: Colors.secondary.deepMaroon, flex: 1, lineHeight: 20 },
+
     btn: {
         backgroundColor: Colors.primary.forestGreen,
-        paddingVertical: 16, borderRadius: 16,
-        alignItems: 'center', justifyContent: 'center',
+        paddingVertical: 17, borderRadius: 16,
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     },
     btnDisabled: { backgroundColor: '#9DC4A4' },
     btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-    resendBtn: { alignItems: 'center', paddingVertical: 8 },
-    resendText: { color: Colors.primary.forestGreen, fontSize: 14, fontWeight: '500' },
 });

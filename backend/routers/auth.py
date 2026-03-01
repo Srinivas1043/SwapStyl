@@ -25,6 +25,13 @@ try:
 except ImportError:
     supabase = None
 
+# Shared dependency helpers for auth token-based endpoints
+from dependencies import get_current_user, get_authenticated_client
+
+def get_supabase_admin() -> Client:
+    """Return the service-role Supabase client (bypasses RLS)."""
+    return supabase
+
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
@@ -575,27 +582,57 @@ class VerifyConfirmModel(BaseModel):
 
 @router.post(
     "/verify/request",
-    summary="Request email verification OTP",
-    description="Sends a 6-digit OTP to the user's email to verify their account"
+    summary="Verify account — auto-verifies if email already confirmed",
+    description="Checks Supabase email confirmation status and marks profile as verified if confirmed."
 )
-async def request_verification(request: VerifyRequestModel):
+async def request_verification(
+    current_user=Depends(get_current_user),
+    supabase=Depends(get_authenticated_client),
+):
     """
-    Send an OTP via Supabase Auth sign_in_with_otp (email OTP mode).
-    The user enters the code in /verify/confirm.
+    Since the user is already authenticated (has a valid JWT), we check if their
+    Supabase Auth email is confirmed. If yes → instantly mark is_verified=true.
+    No OTP, no magic links, no email needed.
     """
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase client not configured")
 
     try:
-        supabase.auth.sign_in_with_otp({
-            "email": request.email,
-            "options": {
-                "should_create_user": False,   # only send to existing users
-            },
-        })
-        return {"success": True, "message": "Verification code sent. Please check your email."}
+        # Use service-role admin client to lookup the user's auth record
+        admin_client = get_supabase_admin()
+        user_info = admin_client.auth.admin.get_user_by_id(current_user.id)
+        email_confirmed = (
+            user_info.user is not None
+            and user_info.user.email_confirmed_at is not None
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to send verification code: {str(e)}")
+        # If admin lookup fails, assume not confirmed
+        email_confirmed = False
+
+    if email_confirmed:
+        # Auto-verify: email is already confirmed in Supabase Auth
+        now = datetime.utcnow().isoformat()
+        supabase.table("profiles").update({
+            "is_verified": True,
+            "verified_at": now,
+        }).eq("id", current_user.id).execute()
+
+        return {
+            "success": True,
+            "auto_verified": True,
+            "message": "Email confirmed! Your verified badge is now active.",
+        }
+    else:
+        # Email not confirmed yet — tell user to check their email
+        return {
+            "success": False,
+            "auto_verified": False,
+            "message": (
+                "Your email address hasn't been confirmed yet. "
+                "Please check your inbox for the original signup confirmation email and click the link, "
+                "then come back here to get verified."
+            ),
+        }
 
 
 @router.post(
