@@ -653,3 +653,104 @@ async def confirm_verification(
     except Exception as e:
         print(f"[verify/confirm] ERROR: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Verification failed: {str(e)}")
+
+
+# ─────────────────────────────────────────────────────────────────
+# SIGNUP EMAIL OTP VERIFICATION
+# ─────────────────────────────────────────────────────────────────
+
+class SignupVerifyModel(BaseModel):
+    email: str
+    token: str   # 8-digit OTP from "Confirm signup" email
+
+
+@router.post("/signup/verify", summary="Verify signup email OTP and auto-mark user as verified")
+async def verify_signup_otp(request: SignupVerifyModel):
+    """Validates OTP from Confirm signup email. On success marks is_verified=true."""
+    admin_client = get_supabase_admin()
+    if not admin_client:
+        raise HTTPException(status_code=500, detail="Auth service not configured")
+    try:
+        print(f"[signup/verify] Verifying signup OTP for {request.email}")
+        auth_response = admin_client.auth.verify_otp({
+            "email": request.email,
+            "token": request.token,
+            "type": "signup",
+        })
+        if not auth_response or not auth_response.user:
+            raise HTTPException(status_code=400, detail="Invalid or expired code. Please request a new one.")
+        user_id = auth_response.user.id
+        now = datetime.utcnow().isoformat()
+        admin_client.table("profiles").update({
+            "is_verified": True,
+            "verified_at": now,
+            "email_verified": True,
+        }).eq("id", user_id).execute()
+        print(f"[signup/verify] User {user_id} verified and marked is_verified=true")
+        return {"success": True, "user_id": user_id, "message": "Email verified! Welcome to SwapStyl."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[signup/verify] ERROR: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Verification failed: {str(e)}")
+
+
+# ─────────────────────────────────────────────────────────────────
+# PASSWORD RESET — OTP FLOW (no magic links)
+# ─────────────────────────────────────────────────────────────────
+
+class PasswordResetRequestModel(BaseModel):
+    email: str
+
+
+class PasswordResetVerifyModel(BaseModel):
+    email: str
+    token: str
+    new_password: str
+
+
+@router.post("/password/reset-request", summary="Send password reset OTP to email")
+async def password_reset_request(request: PasswordResetRequestModel):
+    """Sends reset email using Supabase resetPasswordForEmail. Template must include {{ .Token }}."""
+    admin_client = get_supabase_admin()
+    if not admin_client:
+        raise HTTPException(status_code=500, detail="Auth service not configured")
+    try:
+        print(f"[password/reset-request] Sending reset OTP to {request.email}")
+        admin_client.auth.reset_password_for_email(
+            request.email,
+            {"redirect_to": "swapstyl://reset-password"},
+        )
+        print(f"[password/reset-request] Reset email sent to {request.email}")
+        return {"success": True, "email": request.email, "message": f"A reset code has been sent to {request.email}."}
+    except Exception as e:
+        print(f"[password/reset-request] ERROR: {str(e)}")
+        return {"success": True, "email": request.email, "message": f"If an account exists for {request.email}, a reset code has been sent."}
+
+
+@router.post("/password/reset-verify", summary="Verify reset OTP and set new password")
+async def password_reset_verify(request: PasswordResetVerifyModel):
+    """Validates recovery OTP then updates password via admin API."""
+    admin_client = get_supabase_admin()
+    if not admin_client:
+        raise HTTPException(status_code=500, detail="Auth service not configured")
+    if len(request.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
+    try:
+        print(f"[password/reset-verify] Verifying recovery OTP for {request.email}")
+        auth_response = admin_client.auth.verify_otp({
+            "email": request.email,
+            "token": request.token,
+            "type": "recovery",
+        })
+        if not auth_response or not auth_response.user:
+            raise HTTPException(status_code=400, detail="Invalid or expired code. Please request a new one.")
+        user_id = auth_response.user.id
+        admin_client.auth.admin.update_user_by_id(user_id, {"password": request.new_password})
+        print(f"[password/reset-verify] Password updated for user {user_id}")
+        return {"success": True, "message": "Password updated successfully. You can now log in."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[password/reset-verify] ERROR: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Password reset failed: {str(e)}")
