@@ -139,7 +139,7 @@ export default function Login() {
         return res.json();
     }
 
-    // ── Forgot password: Phase 1 — send OTP
+    // ── Forgot password: Phase 1 — send reset code via Supabase directly
     async function sendPasswordResetOtp() {
         if (!resetEmail.trim()) {
             Alert.alert('Email required', 'Please enter your email address');
@@ -148,36 +148,52 @@ export default function Login() {
         if (resetCountdown > 0) return;
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/auth/password/reset-request`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: resetEmail.trim() }),
+            // Calls Supabase directly — uses the "Reset password" email template with {{ .Token }}
+            const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+                redirectTo: 'swapstyl://ignored',  // required param but we use OTP code, not the link
             });
-            const data = await safeJson(res);
-            if (data?.success) {
-                setResetOtp('');
-                setResetPhase('otp');
-                startResetCountdown();
-            } else {
-                Alert.alert('Error', data?.detail || 'Failed to send code.');
+            if (error) {
+                Alert.alert('Error', error.message);
+                return;
             }
+            setResetOtp('');
+            setResetPhase('otp');
+            startResetCountdown();
         } catch (e: any) {
-            Alert.alert('Error', e.message);
+            Alert.alert('Error', e.message || 'Could not send reset code.');
         } finally {
             setLoading(false);
         }
     }
 
-    // ── Forgot password: Phase 2 — verify OTP
+    // ── Forgot password: Phase 2 — verify OTP via Supabase directly
     async function verifyResetOtp() {
         if (resetOtp.trim().length !== 8) {
             Alert.alert('Code required', 'Please enter the 8-digit code.');
             return;
         }
-        setResetPhase('new-password');
+        setLoading(true);
+        try {
+            // Verify the recovery OTP — this establishes a session
+            const { error } = await supabase.auth.verifyOtp({
+                email: resetEmail.trim(),
+                token: resetOtp.trim(),
+                type: 'recovery',
+            });
+            if (error) {
+                Alert.alert('Invalid code', error.message);
+                return;
+            }
+            // OTP valid — move to new password step
+            setResetPhase('new-password');
+        } catch (e: any) {
+            Alert.alert('Error', e.message || 'Verification failed.');
+        } finally {
+            setLoading(false);
+        }
     }
 
-    // ── Forgot password: Phase 3 — set new password
+    // ── Forgot password: Phase 3 — set new password via Supabase session
     async function submitNewPassword() {
         if (newPassword.length < 6) {
             Alert.alert('Too short', 'Password must be at least 6 characters.');
@@ -189,28 +205,21 @@ export default function Login() {
         }
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/auth/password/reset-verify`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email: resetEmail.trim(),
-                    token: resetOtp.trim(),
-                    new_password: newPassword,
-                }),
-            });
-            const data = await safeJson(res);
-            if (data?.success) {
-                setResetSuccess(true);
-                Alert.alert(
-                    'Password updated! ✓',
-                    'Your password has been reset. You can now log in.',
-                    [{ text: 'Log In', onPress: () => { setAuthMode('email'); setResetPhase('email'); setResetSuccess(false); } }]
-                );
-            } else {
-                Alert.alert('Error', data?.detail || 'Password reset failed. The code may have expired.');
+            // verifyOtp already signed the user in — updateUser uses that session
+            const { error } = await supabase.auth.updateUser({ password: newPassword });
+            if (error) {
+                Alert.alert('Error', error.message);
+                return;
             }
+            // Sign out after reset so they log in fresh
+            await supabase.auth.signOut();
+            Alert.alert(
+                'Password updated! ✓',
+                'Your password has been reset. Please log in with your new password.',
+                [{ text: 'Log In', onPress: () => { setAuthMode('email'); setResetPhase('email'); setNewPassword(''); setConfirmNewPassword(''); } }]
+            );
         } catch (e: any) {
-            Alert.alert('Error', e.message);
+            Alert.alert('Error', e.message || 'Could not update password.');
         } finally {
             setLoading(false);
         }
