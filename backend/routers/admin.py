@@ -534,3 +534,252 @@ def get_moderation_logs(
                 detail="Moderation log table not found. Please apply migration: DB/migration_admin_system.sql"
             )
         raise HTTPException(status_code=500, detail=f"Failed to fetch logs: {error_msg}")
+
+
+# ─────────────────────────────────────────────────────────────────
+# ANALYTICS
+# ─────────────────────────────────────────────────────────────────
+
+@router.get("/analytics")
+def get_analytics(
+    current_user=Depends(check_admin),
+    supabase=Depends(get_supabase),
+):
+    """Dashboard analytics: signups per day (30d) and item approval/rejection counts."""
+    from datetime import datetime, timedelta
+
+    # Daily signups last 30 days
+    since = (datetime.utcnow() - timedelta(days=30)).isoformat()
+    try:
+        signup_resp = supabase.table("profiles").select("created_at").gte("created_at", since).execute()
+        by_day: dict = {}
+        for row in (signup_resp.data or []):
+            day = row["created_at"][:10]
+            by_day[day] = by_day.get(day, 0) + 1
+        # Fill in zeros for missing days
+        result = []
+        for i in range(30):
+            day = (datetime.utcnow() - timedelta(days=29 - i)).strftime("%Y-%m-%d")
+            result.append({"date": day, "count": by_day.get(day, 0)})
+        signups_chart = result
+    except:
+        signups_chart = []
+
+    # Approval stats
+    try:
+        approved = supabase.table("items").select("id", count="exact").eq("moderation_status", "approved").execute().count or 0
+        rejected = supabase.table("items").select("id", count="exact").eq("moderation_status", "rejected").execute().count or 0
+        pending  = supabase.table("items").select("id", count="exact").eq("moderation_status", "pending_review").execute().count or 0
+    except:
+        approved = rejected = pending = 0
+
+    return {
+        "signups_chart": signups_chart,
+        "approval_stats": {"approved": approved, "rejected": rejected, "pending": pending},
+    }
+
+
+@router.get("/swaps/stats")
+def get_swap_stats(
+    current_user=Depends(check_admin),
+    supabase=Depends(get_supabase),
+):
+    """Swap overview stats."""
+    try:
+        total = supabase.table("swaps").select("id", count="exact").execute().count or 0
+        completed = supabase.table("swaps").select("id", count="exact").eq("status", "completed").execute().count or 0
+        pending = supabase.table("swaps").select("id", count="exact").eq("status", "pending").execute().count or 0
+        cancelled = supabase.table("swaps").select("id", count="exact").eq("status", "cancelled").execute().count or 0
+    except:
+        total = completed = pending = cancelled = 0
+    return {"total": total, "completed": completed, "pending": pending, "cancelled": cancelled}
+
+
+# ─────────────────────────────────────────────────────────────────
+# DEACTIVATED ACCOUNTS
+# ─────────────────────────────────────────────────────────────────
+
+@router.get("/users/deactivated")
+def get_deactivated_users(
+    current_user=Depends(check_admin),
+    supabase=Depends(get_supabase),
+):
+    """Users who requested account deactivation (deactivated_at set, deleted_at null)."""
+    try:
+        resp = supabase.table("profiles").select(
+            "id, full_name, username, avatar_url, deactivated_at, created_at"
+        ).filter("deactivated_at", "is", "not null").filter("deleted_at", "is", "null").order("deactivated_at", desc=True).execute()
+        users = resp.data or []
+        # Add days remaining until permanent delete (14 days)
+        from datetime import datetime, timedelta
+        for u in users:
+            if u.get("deactivated_at"):
+                deactivated = datetime.fromisoformat(u["deactivated_at"].replace("Z", "+00:00"))
+                delete_on = deactivated + timedelta(days=14)
+                days_left = max(0, (delete_on - datetime.now(deactivated.tzinfo)).days)
+                u["days_remaining"] = days_left
+        return {"users": users}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch deactivated users: {str(e)}")
+
+
+@router.post("/users/{user_id}/restore")
+def restore_user(
+    user_id: str,
+    current_user=Depends(check_admin),
+    supabase=Depends(get_authenticated_client),
+):
+    """Restore a deactivated user account."""
+    supabase.table("profiles").update({"deactivated_at": None}).eq("id", user_id).execute()
+    supabase.table("moderation_log").insert({
+        "moderator_id": current_user.id,
+        "action_type": "account_restored",
+        "target_type": "user",
+        "target_id": user_id,
+        "reason": "Admin restored deactivated account",
+    }).execute()
+    return {"success": True}
+
+
+@router.delete("/users/{user_id}/delete-permanently")
+def delete_user_permanently(
+    user_id: str,
+    current_user=Depends(check_admin),
+    supabase=Depends(get_authenticated_client),
+):
+    """Hard-delete a deactivated user account."""
+    supabase.table("profiles").update({"deleted_at": "now()"}).eq("id", user_id).execute()
+    supabase.table("moderation_log").insert({
+        "moderator_id": current_user.id,
+        "action_type": "account_deleted",
+        "target_type": "user",
+        "target_id": user_id,
+        "reason": "Admin permanent deletion",
+    }).execute()
+    return {"success": True}
+
+
+# ─────────────────────────────────────────────────────────────────
+# VERIFICATION MANAGEMENT
+# ─────────────────────────────────────────────────────────────────
+
+@router.get("/verifications")
+def get_verifications(
+    current_user=Depends(check_admin),
+    supabase=Depends(get_supabase),
+):
+    """All verified users + recent unverified active users for admin grant."""
+    try:
+        verified_resp = supabase.table("profiles").select(
+            "id, full_name, username, avatar_url, email, verified_at, created_at"
+        ).eq("is_verified", True).order("verified_at", desc=True).execute()
+
+        unverified_resp = supabase.table("profiles").select(
+            "id, full_name, username, avatar_url, email, created_at"
+        ).eq("is_verified", False).filter("deactivated_at", "is", "null").order("created_at", desc=True).limit(50).execute()
+
+        return {
+            "verified": verified_resp.data or [],
+            "unverified": unverified_resp.data or [],
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch verifications: {str(e)}")
+
+
+@router.post("/verifications/{user_id}/grant")
+def grant_verification(
+    user_id: str,
+    current_user=Depends(check_admin),
+    supabase=Depends(get_authenticated_client),
+):
+    """Admin grants verification badge to a user."""
+    from datetime import datetime
+    supabase.table("profiles").update({
+        "is_verified": True,
+        "verified_at": datetime.utcnow().isoformat(),
+    }).eq("id", user_id).execute()
+    supabase.table("moderation_log").insert({
+        "moderator_id": current_user.id,
+        "action_type": "verification_granted",
+        "target_type": "user",
+        "target_id": user_id,
+        "reason": "Admin manually granted verification",
+    }).execute()
+    return {"success": True}
+
+
+@router.post("/verifications/{user_id}/revoke")
+def revoke_verification(
+    user_id: str,
+    current_user=Depends(check_admin),
+    supabase=Depends(get_authenticated_client),
+):
+    """Admin revokes verification badge from a user."""
+    supabase.table("profiles").update({
+        "is_verified": False,
+        "verified_at": None,
+    }).eq("id", user_id).execute()
+    supabase.table("moderation_log").insert({
+        "moderator_id": current_user.id,
+        "action_type": "verification_revoked",
+        "target_type": "user",
+        "target_id": user_id,
+        "reason": "Admin revoked verification badge",
+    }).execute()
+    return {"success": True}
+
+
+# ─────────────────────────────────────────────────────────────────
+# USER SEARCH
+# ─────────────────────────────────────────────────────────────────
+
+@router.get("/users/search")
+def search_users(
+    q: str = Query("", min_length=1),
+    current_user=Depends(check_admin),
+    supabase=Depends(get_supabase),
+):
+    """Search users by name or username."""
+    try:
+        resp = supabase.table("profiles").select(
+            "id, full_name, username, avatar_url, role, is_verified, suspended_at, created_at"
+        ).or_(f"full_name.ilike.%{q}%,username.ilike.%{q}%").limit(30).execute()
+        return {"users": resp.data or []}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+
+
+# ─────────────────────────────────────────────────────────────────
+# ALL ITEMS (not just pending)
+# ─────────────────────────────────────────────────────────────────
+
+@router.get("/items")
+def get_all_items(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, le=100),
+    status: Optional[str] = Query(None),
+    current_user=Depends(check_admin),
+    supabase=Depends(get_supabase),
+):
+    """Get all items with optional status filter."""
+    try:
+        offset = (page - 1) * page_size
+        query = supabase.table("items").select(
+            "id, title, images, brand, size, moderation_status, created_at, owner:owner_id(id, full_name, username)"
+        ).filter("deleted_at", "is", "null")
+        if status:
+            query = query.eq("moderation_status", status)
+        resp = query.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
+        count_q = supabase.table("items").select("id", count="exact").filter("deleted_at", "is", "null")
+        if status:
+            count_q = count_q.eq("moderation_status", status)
+        total = count_q.execute().count or 0
+        return {
+            "items": resp.data or [],
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "has_more": offset + page_size < total,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch items: {str(e)}")

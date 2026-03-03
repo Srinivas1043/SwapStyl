@@ -1,0 +1,184 @@
+/* Deactivated Accounts CSS */
+.container {
+    padding: 2rem;
+    max-width: 1100px;
+}
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+}
+
+.header p {
+    color: #666;
+    margin: 0.25rem 0 0;
+    font-size: 0.9rem;
+}
+
+.totalBadge {
+    background: #FFF3CD;
+    color: #856404;
+    font-weight: 700;
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+.errorBanner {
+    background: #FEE;
+    border-left: 4px solid #E74C3C;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    color: #C0392B;
+    margin-bottom: 1rem;
+}
+
+.infoBox {
+    background: #EBF5FB;
+    border-left: 4px solid #2980b9;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    color: #1a5276;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.loading {
+    padding: 3rem;
+    text-align: center;
+    color: #888;
+}
+
+.empty {
+    padding: 3rem;
+    text-align: center;
+    color: #aaa;
+    font-size: 1.1rem;
+}
+
+.tableWrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e8e8e8;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.table thead {
+    background: #F8F9FA;
+}
+
+.table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #555;
+    border-bottom: 1.5px solid #E8E8E8;
+}
+
+.table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #F0F0F0;
+    vertical-align: middle;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.table tr:hover td {
+    background: #FAFBFF;
+}
+
+.userCell {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.avatarFallback {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #999;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.userName {
+    font-weight: 600;
+    color: #1a1a2e;
+}
+
+.userHandle {
+    color: #999;
+    font-size: 0.8rem;
+}
+
+.daysChip {
+    padding: 0.3rem 0.7rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.actions {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.restoreBtn {
+    background: #EAF6E9;
+    color: #27ae60;
+    border: 1.5px solid #27ae60;
+    padding: 0.4rem 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.82rem;
+}
+
+.restoreBtn:hover {
+    background: #27ae60;
+    color: white;
+}
+
+.deleteBtn {
+    background: #FEE;
+    color: #E74C3C;
+    border: 1.5px solid #E74C3C;
+    padding: 0.4rem 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.82rem;
+}
+
+.deleteBtn:hover {
+    background: #E74C3C;
+    color: white;
+}

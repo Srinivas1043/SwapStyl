@@ -291,3 +291,27 @@
   font-size: 16px;
   color: var(--text-secondary);
 }
+
+/* ── New additions for enhanced Reports page ── */
+.container { padding: 2rem; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; }
+.header h1 { font-size: 1.75rem; font-weight: 700; color: #1a1a2e; margin: 0; }
+.header p { color: #666; margin: 0.25rem 0 0; font-size: 0.9rem; }
+.totalBadge { background: #FFE8E8; color: #E74C3C; font-weight: 700; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; }
+.errorBanner { background: #FEE; border-left: 4px solid #E74C3C; padding: 0.75rem 1rem; border-radius: 6px; color: #C0392B; margin-bottom: 1rem; }
+.filterRow { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.reportBody { display: flex; gap: 1rem; margin: 0.75rem 0; }
+.reportThumb { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.reportDetails p { margin: 0.2rem 0; font-size: 0.88rem; }
+.reporter { color: #888; font-size: 0.8rem; }
+.description { color: #666; font-style: italic; font-size: 0.85rem; border-left: 3px solid #ddd; padding-left: 0.6rem; }
+.typeBadge, .statusBadge { padding: 0.25rem 0.65rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+.itemType { background: #EBF5FB; color: #2980b9; }
+.userType { background: #F9EBEA; color: #c0392b; }
+.open { background: #FFF3CD; color: #856404; }
+.resolved { background: #EAF6E9; color: #27ae60; }
+.dismissed { background: #F0F0F0; color: #888; }
+.reportActions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+.dismissBtn { padding: 0.4rem 0.9rem; background: #F8F9FA; border: 1.5px solid #aaa; color: #555; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.82rem; }
+.dismissBtn:hover { background: #aaa; color: white; }
+.dismissConfirmBtn { flex: 1; padding: 0.65rem; background: #aaa; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }

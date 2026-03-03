@@ -38,6 +38,8 @@ export default function DashboardLayout({
     { name: 'Products', path: '/dashboard/products', icon: '📦' },
     { name: 'Reports', path: '/dashboard/reports', icon: '🚩' },
     { name: 'Users', path: '/dashboard/users', icon: '👥' },
+    { name: 'Verifications', path: '/dashboard/verifications', icon: '✓' },
+    { name: 'Deactivated', path: '/dashboard/deactivated', icon: '⏳' },
     { name: 'Admins', path: '/dashboard/admins', icon: '🔑' },
     { name: 'Logs', path: '/dashboard/logs', icon: '📋' },
   ];

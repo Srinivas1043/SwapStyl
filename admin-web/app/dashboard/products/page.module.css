@@ -289,3 +289,23 @@
   font-size: 16px;
   color: var(--text-secondary);
 }
+
+/* ── New additions for enhanced Products page ── */
+.container { padding: 2rem; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; }
+.header h1 { font-size: 1.75rem; font-weight: 700; color: #1a1a2e; margin: 0; }
+.header p { color: #666; margin: 0.25rem 0 0; font-size: 0.9rem; }
+.totalBadge { background: #F0F4FF; color: #4F7942; font-weight: 700; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; white-space: nowrap; }
+.errorBanner { background: #FEE; border-left: 4px solid #E74C3C; padding: 0.75rem 1rem; border-radius: 6px; color: #C0392B; margin-bottom: 1rem; }
+.subFilter { display: flex; gap: 0.4rem; margin-bottom: 1rem; }
+.subBtn { padding: 0.35rem 0.9rem; border-radius: 20px; border: 1.5px solid #ddd; background: white; cursor: pointer; font-size: 0.82rem; color: #666; }
+.subBtn:hover { border-color: #4F7942; color: #4F7942; }
+.subActive { background: #EAF6E9 !important; color: #27ae60 !important; border-color: #27ae60 !important; }
+.itemThumb { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
+.noImage { width: 48px; height: 48px; border-radius: 8px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.meta { color: #888; font-size: 0.82rem; }
+.statusBadge { font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
+.deleteBtn { padding: 5px 10px; background: #FEE; border: 1.5px solid #E74C3C; color: #E74C3C; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+.deleteBtn:hover { background: #E74C3C; color: white; }
+.deleteConfirmBtn { flex: 1; padding: 0.65rem; background: #E74C3C; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+.previewImg { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; }

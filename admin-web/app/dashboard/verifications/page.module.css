@@ -1,0 +1,49 @@
+/* Shared base styles — mirrors users/page.module.css */
+.container { padding: 2rem; max-width: 1200px; }
+.header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; }
+.header h1 { font-size: 1.75rem; font-weight: 700; color: #1a1a2e; margin: 0; }
+.header p { color: #666; margin: 0.25rem 0 0; font-size: 0.9rem; }
+.totalBadge { background: #F0F4FF; color: #4F7942; font-weight: 700; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; white-space: nowrap; }
+.errorBanner { background: #FEE; border-left: 4px solid #E74C3C; padding: 0.75rem 1rem; border-radius: 6px; color: #C0392B; margin-bottom: 1rem; }
+.loading { padding: 3rem; text-align: center; color: #888; }
+.empty { padding: 3rem; text-align: center; color: #aaa; font-size: 1.1rem; }
+.filterBar { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.filterBtn { padding: 0.45rem 1rem; border-radius: 20px; border: 1.5px solid #ddd; background: white; cursor: pointer; font-size: 0.85rem; color: #555; transition: all 0.15s; }
+.filterBtn:hover { border-color: #4F7942; color: #4F7942; }
+.active { background: #4F7942 !important; color: white !important; border-color: #4F7942 !important; }
+.tableWrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #e8e8e8; }
+.table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.table thead { background: #F8F9FA; }
+.table th { padding: 0.75rem 1rem; text-align: left; font-weight: 600; color: #555; border-bottom: 1.5px solid #E8E8E8; white-space: nowrap; }
+.table td { padding: 0.75rem 1rem; border-bottom: 1px solid #F0F0F0; vertical-align: middle; }
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: #FAFBFF; }
+.pagination { display: flex; gap: 1rem; align-items: center; justify-content: center; padding: 1.5rem 0; }
+.pagination button { padding: 0.5rem 1.2rem; border: 1.5px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 0.875rem; }
+.pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagination button:not(:disabled):hover { background: #4F7942; color: white; border-color: #4F7942; }
+.userCell { display: flex; align-items: center; gap: 0.6rem; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+.avatarFallback { width: 34px; height: 34px; border-radius: 50%; background: #4F7942; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+.userName { font-weight: 600; color: #1a1a2e; display: block; }
+.userHandle { color: #999; font-size: 0.8rem; display: block; }
+.actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modalContent { background: white; border-radius: 16px; padding: 2rem; max-width: 460px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+.modalContent h2 { margin: 0 0 1.25rem; font-size: 1.2rem; }
+.modalButtons { display: flex; gap: 0.75rem; margin-top: 1.25rem; justify-content: flex-end; }
+.cancelBtn { padding: 0.6rem 1.2rem; border: 1.5px solid #ddd; border-radius: 8px; background: white; cursor: pointer; }
+.reasonInput, .actionInput { width: 100%; padding: 0.75rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.9rem; resize: vertical; min-height: 80px; margin-top: 0.75rem; box-sizing: border-box; }
+
+/* Verifications specific */
+.headerStats { display: flex; gap: 0.5rem; align-items: center; }
+.statChip { padding: 0.35rem 0.8rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; }
+.searchBar { display: flex; gap: 0.5rem; margin-bottom: 1rem; position: relative; }
+.searchInput { flex: 1; padding: 0.65rem 1rem; border: 1.5px solid #ddd; border-radius: 10px; font-size: 0.9rem; }
+.clearBtn { padding: 0.5rem 0.8rem; border: 1.5px solid #ddd; border-radius: 8px; background: white; cursor: pointer; color: #888; }
+.verifiedBadge { color: #1DA1F2; font-weight: 700; font-size: 0.85rem; }
+.grantBtn { background: #EAF6E9; color: #27ae60; border: 1.5px solid #27ae60; padding: 0.4rem 0.9rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.82rem; }
+.grantBtn:hover { background: #27ae60; color: white; }
+.revokeBtn { background: #FEE; color: #E74C3C; border: 1.5px solid #E74C3C; padding: 0.4rem 0.9rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.82rem; }
+.revokeBtn:hover { background: #E74C3C; color: white; }
+.email { color: #666; font-size: 0.85rem; }

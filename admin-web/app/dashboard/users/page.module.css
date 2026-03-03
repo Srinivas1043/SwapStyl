@@ -313,3 +313,28 @@
   font-size: 16px;
   color: var(--text-secondary);
 }
+
+/* ── New additions for enhanced Users page ── */
+.container { padding: 2rem; }
+.totalBadge { background: #F0F4FF; color: #4F7942; font-weight: 700; padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem; }
+.errorBanner { background: #FEE; border-left: 4px solid #E74C3C; padding: 0.75rem 1rem; border-radius: 6px; color: #C0392B; margin-bottom: 1rem; }
+.searchBar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.searchInput { flex: 1; padding: 0.65rem 1rem; border: 1.5px solid #ddd; border-radius: 10px; font-size: 0.9rem; }
+.clearBtn { padding: 0.5rem 0.8rem; border: 1.5px solid #ddd; border-radius: 8px; background: white; cursor: pointer; color: #888; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+.avatarFallback { width: 34px; height: 34px; border-radius: 50%; background: #4F7942; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+.userName { font-weight: 600; color: #1a1a2e; display: block; }
+.userHandle { color: #999; font-size: 0.8rem; display: block; }
+.email { color: #666; font-size: 0.85rem; }
+.date { color: #888; font-size: 0.82rem; white-space: nowrap; }
+.roleBadge { padding: 0.25rem 0.65rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+.admin { background: #FFF0DB; color: #d4860a; }
+.moderator { background: #E8E0FF; color: #6C5CE7; }
+.user { background: #F0F0F0; color: #666; }
+.verifiedBadge { color: #1DA1F2; font-size: 0.82rem; font-weight: 700; }
+.unverifiedBadge { color: #ccc; font-size: 0.85rem; }
+.actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.roleBtn { padding: 5px 10px; background: #F0F4FF; border: 1.5px solid #6C5CE7; color: #6C5CE7; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+.roleBtn:hover { background: #6C5CE7; color: white; }
+.roleSelect { width: 100%; padding: 0.6rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.9rem; margin-top: 0.75rem; }
+.modalError { color: #e74c3c; font-size: 0.85rem; margin-top: 0.5rem; }
