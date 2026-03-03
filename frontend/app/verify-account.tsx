@@ -40,8 +40,8 @@ export default function VerifyAccountScreen() {
 
     // ── Step 2: Confirm OTP ───────────────────────────────────────
     async function handleConfirm() {
-        if (otp.trim().length !== 6) {
-            setError('Please enter the full 6-digit code.');
+        if (otp.trim().length !== 8) {
+            setError('Please enter the full 8-digit code.');
             return;
         }
         setLoading(true);
@@ -92,7 +92,7 @@ export default function VerifyAccountScreen() {
                         <View style={s.stepsBox}>
                             <Text style={s.stepsTitle}>How it works</Text>
                             {[
-                                { icon: 'mail-outline', text: 'We send a 6-digit code to your registered email' },
+                                { icon: 'mail-outline', text: 'We send an 8-digit code to your registered email' },
                                 { icon: 'keypad-outline', text: 'Enter the code to verify your account' },
                                 { icon: 'shield-checkmark-outline', text: 'Blue ✓ badge activates instantly' },
                             ].map((item, i) => (
@@ -133,7 +133,7 @@ export default function VerifyAccountScreen() {
                             </View>
                             <Text style={s.heroTitle}>Check Your Email</Text>
                             <Text style={s.heroSubtitle}>
-                                We sent a 6-digit code to{'\n'}
+                                We sent an 8-digit code to{'\n'}
                                 <Text style={{ fontWeight: '700', color: Colors.secondary.deepMaroon }}>
                                     {sentEmail}
                                 </Text>
@@ -146,10 +146,10 @@ export default function VerifyAccountScreen() {
                                 style={s.otpInput}
                                 value={otp}
                                 onChangeText={v => { setOtp(v.replace(/[^0-9]/g, '')); setError(''); }}
-                                placeholder="000000"
+                                placeholder="00000000"
                                 placeholderTextColor="#CCC"
                                 keyboardType="number-pad"
-                                maxLength={6}
+                                maxLength={8}
                                 autoFocus
                                 textAlign="center"
                             />
@@ -158,9 +158,9 @@ export default function VerifyAccountScreen() {
                         {error ? <Text style={s.errorText}>{error}</Text> : null}
 
                         <TouchableOpacity
-                            style={[s.btn, (loading || otp.length < 6) && s.btnDisabled]}
+                            style={[s.btn, (loading || otp.length < 8) && s.btnDisabled]}
                             onPress={handleConfirm}
-                            disabled={loading || otp.length < 6}
+                            disabled={loading || otp.length < 8}
                             activeOpacity={0.85}
                         >
                             {loading

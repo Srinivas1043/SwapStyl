@@ -1,4 +1,4 @@
-"""
+﻿"""
 Email Authentication & Verification Endpoints
 Handles email verification tracking and password reset management
 """
@@ -35,9 +35,9 @@ def get_supabase_admin() -> Client:
 router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
-# ─────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # REQUEST MODELS
-# ─────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class EmailVerificationStatusRequest(BaseModel):
     """Check email verification status"""
@@ -104,9 +104,9 @@ class SignupResponse(BaseModel):
     message: str
 
 
-# ─────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # ENDPOINTS
-# ─────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @router.post(
     "/login",
@@ -564,9 +564,9 @@ async def health_check():
     }
 
 
-# ─────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # USER VERIFICATION (OTP-BASED)
-# ─────────────────────────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class VerifyConfirmModel(BaseModel):
     """Confirm OTP and mark account as verified"""
@@ -574,68 +574,61 @@ class VerifyConfirmModel(BaseModel):
     token: str          # 6-digit OTP from email
 
 
-@router.post(
-    "/verify/request",
-    summary="Send OTP verification code to user's registered email",
-    description="Uses Supabase admin API to send a real 6-digit OTP to the user's email."
-)
-async def request_verification(
-    current_user=Depends(get_current_user),
-):
+@router.post("/verify/request", summary="Send 6-digit OTP to user's registered email")
+async def request_verification(current_user=Depends(get_current_user)):
     """
-    1. Get the user's email from their auth token (no manual email input needed).
-    2. Use Supabase admin generate_link() to produce a 6-digit OTP and send the email.
-    The user then enters the 6-digit code in /verify/confirm.
+    Sends a 6-digit OTP via Supabase's email service to the user's registered email.
+    Uses sign_in_with_otp which actually triggers email delivery.
     """
     admin_client = get_supabase_admin()
     if not admin_client:
         raise HTTPException(status_code=500, detail="Auth service not configured")
 
-    # Get the user's email from their session
-    email = current_user.email
+    email = getattr(current_user, "email", None)
     if not email:
         raise HTTPException(status_code=400, detail="No email associated with this account")
 
     try:
-        # Use admin generate_link with type="magiclink" — Supabase sends the email
-        # and returns email_otp (6-digit code) in the response properties.
-        # The email sent by Supabase contains BOTH the magic link AND the OTP code.
-        admin_client.auth.admin.generate_link({
-            "type": "magiclink",
+        print(f"[verify/request] Sending OTP to {email}")
+        # sign_in_with_otp is the correct API â€” it SENDS the email.
+        # With Supabase Email OTP enabled, this sends a 6-digit code.
+        # With default settings, it sends a magic link that also contains the OTP.
+        admin_client.auth.sign_in_with_otp({
             "email": email,
+            "options": {
+                "should_create_user": False,   # only for existing accounts
+            }
         })
+        print(f"[verify/request] OTP sent successfully to {email}")
         return {
             "success": True,
             "email": email,
-            "message": f"A 6-digit verification code has been sent to {email}. Please check your inbox.",
+            "message": f"A verification code has been sent to {email}. Check your inbox (and spam folder).",
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to send verification code: {str(e)}")
+        print(f"[verify/request] ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to send code: {str(e)}")
 
 
-@router.post(
-    "/verify/confirm",
-    summary="Confirm the 6-digit OTP and activate verification badge",
-    description="Verifies the OTP token. On success, sets is_verified=true on the profile."
-)
+@router.post("/verify/confirm", summary="Confirm OTP and activate verified badge")
 async def confirm_verification(
     request: VerifyConfirmModel,
     current_user=Depends(get_current_user),
 ):
     """
-    Verify the 6-digit OTP entered by the user.
-    On success: mark profile is_verified=True.
+    Validates the 6-digit OTP via Supabase verify_otp.
+    On success: marks profile is_verified=True.
     """
     admin_client = get_supabase_admin()
     if not admin_client:
         raise HTTPException(status_code=500, detail="Auth service not configured")
 
     try:
-        # Verify the OTP — type "email" covers both magic link OTPs and sign_in_with_otp codes
+        print(f"[verify/confirm] Verifying OTP for {request.email}, token={request.token}")
         auth_response = admin_client.auth.verify_otp({
             "email": request.email,
             "token": request.token,
-            "type": "email",
+            "type": "email",   # correct type for sign_in_with_otp numeric codes
         })
 
         if not auth_response or not auth_response.user:
@@ -648,112 +641,15 @@ async def confirm_verification(
             "verified_at": now,
         }).eq("id", current_user.id).execute()
 
+        print(f"[verify/confirm] Profile {current_user.id} marked as verified")
         return {
             "success": True,
-            "message": "Account verified! Your ✓ badge is now active.",
+            "message": "Account verified! Your âœ“ badge is now active.",
             "verified_at": now,
         }
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Verification failed: {str(e)}")
-
-
-
-@router.post(
-    "/verify/request",
-    summary="Verify account — auto-verifies if email already confirmed",
-    description="Checks Supabase email confirmation status and marks profile as verified if confirmed."
-)
-async def request_verification(
-    current_user=Depends(get_current_user),
-    supabase=Depends(get_authenticated_client),
-):
-    """
-    Since the user is already authenticated (has a valid JWT), we check if their
-    Supabase Auth email is confirmed. If yes → instantly mark is_verified=true.
-    No OTP, no magic links, no email needed.
-    """
-    if not supabase:
-        raise HTTPException(status_code=500, detail="Supabase client not configured")
-
-    try:
-        # Use service-role admin client to lookup the user's auth record
-        admin_client = get_supabase_admin()
-        user_info = admin_client.auth.admin.get_user_by_id(current_user.id)
-        email_confirmed = (
-            user_info.user is not None
-            and user_info.user.email_confirmed_at is not None
-        )
-    except Exception as e:
-        # If admin lookup fails, assume not confirmed
-        email_confirmed = False
-
-    if email_confirmed:
-        # Auto-verify: email is already confirmed in Supabase Auth
-        now = datetime.utcnow().isoformat()
-        supabase.table("profiles").update({
-            "is_verified": True,
-            "verified_at": now,
-        }).eq("id", current_user.id).execute()
-
-        return {
-            "success": True,
-            "auto_verified": True,
-            "message": "Email confirmed! Your verified badge is now active.",
-        }
-    else:
-        # Email not confirmed yet — tell user to check their email
-        return {
-            "success": False,
-            "auto_verified": False,
-            "message": (
-                "Your email address hasn't been confirmed yet. "
-                "Please check your inbox for the original signup confirmation email and click the link, "
-                "then come back here to get verified."
-            ),
-        }
-
-
-@router.post(
-    "/verify/confirm",
-    summary="Confirm OTP and mark user as verified",
-    description="Verify the 6-digit OTP and set is_verified=true on the user profile"
-)
-async def confirm_verification(request: VerifyConfirmModel):
-    """
-    Verify the OTP token via Supabase Auth and, on success,
-    mark the user profile row as is_verified=True.
-    """
-    if not supabase:
-        raise HTTPException(status_code=500, detail="Supabase client not configured")
-
-    try:
-        # Verify the OTP using Supabase Auth
-        auth_response = supabase.auth.verify_otp({
-            "email": request.email,
-            "token": request.token,
-            "type": "email",
-        })
-
-        if not auth_response or not auth_response.user:
-            raise HTTPException(status_code=400, detail="Invalid or expired OTP")
-
-        # Mark profile as verified in DB
-        now = datetime.utcnow().isoformat()
-        supabase.table("profiles").update({
-            "is_verified": True,
-            "verified_at": now,
-        }).eq("id", request.user_id).execute()
-
-        return {
-            "success": True,
-            "message": "Account verified successfully! Your verified badge is now active.",
-            "verified_at": now,
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
+        print(f"[verify/confirm] ERROR: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Verification failed: {str(e)}")
