@@ -309,3 +309,24 @@
 .deleteBtn:hover { background: #E74C3C; color: white; }
 .deleteConfirmBtn { flex: 1; padding: 0.65rem; background: #E74C3C; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
 .previewImg { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; }
+/* ── Products extra button variants ── */
+.approveBtn { padding: 5px 10px; background: #EAF6E9; border: 1.5px solid #27ae60; color: #27ae60; border-radius: 6px; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+.approveBtn:hover { background: #27ae60; color: white; }
+.rejectBtn { padding: 5px 10px; background: #FEE; border: 1.5px solid #E74C3C; color: #E74C3C; border-radius: 6px; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+.rejectBtn:hover { background: #E74C3C; color: white; }
+.approveConfirmBtn { flex: 1; padding: 0.65rem; background: #27ae60; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+.rejectConfirmBtn { flex: 1; padding: 0.65rem; background: #E74C3C; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+.deleteConfirmBtn { flex: 1; padding: 0.65rem; background: #c0392b; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+.loading { display: flex; align-items: center; justify-content: center; padding: 3rem; font-size: 1rem; color: #888; }
+.empty { text-align: center; padding: 3rem; color: #aaa; font-size: 1.1rem; }
+.itemPreview { display: flex; gap: 0.75rem; align-items: center; padding: 0.75rem; background: #F8F9FA; border-radius: 10px; margin-bottom: 1rem; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modalContent { background: white; border-radius: 16px; padding: 2rem; max-width: 460px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+.modalContent h2 { margin: 0 0 1.25rem; }
+.modalButtons { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+.cancelBtn { padding: 0.65rem 1.2rem; border: 1.5px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-weight: 600; }
+.reasonInput { width: 100%; padding: 0.75rem; border: 1.5px solid #ddd; border-radius: 8px; font-size: 0.9rem; resize: vertical; min-height: 80px; margin-top: 0.75rem; box-sizing: border-box; }
+.pagination { display: flex; gap: 1rem; align-items: center; justify-content: center; padding: 1.5rem; }
+.pagination button { padding: 0.45rem 1.1rem; border: 1.5px solid #ddd; border-radius: 8px; background: white; cursor: pointer; }
+.pagination button:hover:not(:disabled) { background: #4F7942; color: white; border-color: #4F7942; }
+.pagination button:disabled { opacity: 0.4; cursor: not-allowed; }

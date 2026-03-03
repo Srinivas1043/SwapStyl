@@ -315,3 +315,23 @@
 .dismissBtn { padding: 0.4rem 0.9rem; background: #F8F9FA; border: 1.5px solid #aaa; color: #555; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.82rem; }
 .dismissBtn:hover { background: #aaa; color: white; }
 .dismissConfirmBtn { flex: 1; padding: 0.65rem; background: #aaa; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+/* ── Reports extra styles ── */
+.reportsList { display: flex; flex-direction: column; gap: 1rem; }
+.reportCard { background: white; border-radius: 12px; border: 1px solid #eee; padding: 1rem 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+.reportHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.reportMeta { display: flex; gap: 0.4rem; }
+.reportDate { color: #aaa; font-size: 0.8rem; }
+.resolveBtn { padding: 0.4rem 0.9rem; background: #EAF6E9; border: 1.5px solid #27ae60; color: #27ae60; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.82rem; }
+.resolveBtn:hover { background: #27ae60; color: white; }
+.resolveConfirmBtn { flex: 1; padding: 0.65rem; background: #27ae60; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modalContent { background: white; border-radius: 16px; padding: 2rem; max-width: 460px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+.modalContent h2 { margin: 0 0 1.25rem; }
+.modalButtons { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+.cancelBtn { padding: 0.65rem 1.2rem; border: 1.5px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-weight: 600; }
+.loading { padding: 3rem; text-align: center; color: #888; }
+.empty { padding: 3rem; text-align: center; color: #aaa; font-size: 1.1rem; }
+.pagination { display: flex; gap: 1rem; align-items: center; justify-content: center; padding: 1.5rem; }
+.pagination button { padding: 0.45rem 1.1rem; border: 1.5px solid #ddd; border-radius: 8px; background: white; cursor: pointer; }
+.pagination button:hover:not(:disabled) { background: #4F7942; color: white; border-color: #4F7942; }
+.pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
