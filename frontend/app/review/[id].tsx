@@ -12,10 +12,15 @@ export default function LeaveReviewScreen() {
 
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState('');
+    const [swapMethod, setSwapMethod] = useState<'physical' | 'post' | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
     async function submitReview() {
         if (rating < 1 || rating > 5) return;
+        if (!swapMethod) {
+            Alert.alert('Required', 'Please tell us how you completed the swap.');
+            return;
+        }
         setSubmitting(true);
         try {
             await authenticatedFetch('/reviews', {
@@ -24,10 +29,11 @@ export default function LeaveReviewScreen() {
                     reviewee_id: reviewee_id as string,
                     conversation_id: id as string,
                     rating,
-                    comment: comment.trim() || undefined
+                    comment: comment.trim() || undefined,
+                    swap_method: swapMethod
                 })
             });
-            Alert.alert('Success', 'Thank you for leaving a review! +100 Points if you gave 5 stars ⭐', [
+            Alert.alert('Success', 'Thank you for leaving a review!', [
                 { text: 'OK', onPress: () => router.back() }
             ]);
         } catch (e: any) {
@@ -77,6 +83,36 @@ export default function LeaveReviewScreen() {
                         {rating === 5 ? 'Excellent!' : rating === 4 ? 'Great' : rating === 3 ? 'Okay' : rating === 2 ? 'Disappointing' : 'Terrible'}
                     </Text>
 
+                    <Text style={s.methodPrompt}>How did you complete the swap?</Text>
+                    <View style={s.methodContainer}>
+                        <TouchableOpacity
+                            style={[s.methodButton, swapMethod === 'physical' && s.methodButtonActive]}
+                            onPress={() => setSwapMethod('physical')}
+                        >
+                            <Ionicons
+                                name="person-outline"
+                                size={24}
+                                color={swapMethod === 'physical' ? '#fff' : Colors.secondary.deepMaroon}
+                            />
+                            <Text style={[s.methodButtonText, swapMethod === 'physical' && s.methodButtonTextActive]}>
+                                Physical Meeting
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[s.methodButton, swapMethod === 'post' && s.methodButtonActive]}
+                            onPress={() => setSwapMethod('post')}
+                        >
+                            <Ionicons
+                                name="mail-outline"
+                                size={24}
+                                color={swapMethod === 'post' ? '#fff' : Colors.secondary.deepMaroon}
+                            />
+                            <Text style={[s.methodButtonText, swapMethod === 'post' && s.methodButtonTextActive]}>
+                                Postal Service
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
                     <View style={s.inputWrapper}>
                         <TextInput
                             style={s.input}
@@ -116,7 +152,33 @@ const s = StyleSheet.create({
     prompt: { fontSize: 20, fontWeight: '700', color: Colors.secondary.deepMaroon, textAlign: 'center', marginBottom: 8 },
     subPrompt: { fontSize: 14, color: '#888', textAlign: 'center', marginBottom: 32, lineHeight: 20 },
     starsRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-    ratingLabel: { fontSize: 16, fontWeight: '600', color: Colors.secondary.deepMaroon, marginBottom: 40 },
+    ratingLabel: { fontSize: 16, fontWeight: '600', color: Colors.secondary.deepMaroon, marginBottom: 24 },
+    methodPrompt: { fontSize: 16, fontWeight: '600', color: Colors.secondary.deepMaroon, marginBottom: 12 },
+    methodContainer: { flexDirection: 'row', gap: 12, width: '100%', marginBottom: 32 },
+    methodButton: {
+        flex: 1,
+        paddingVertical: 16,
+        paddingHorizontal: 12,
+        borderRadius: 14,
+        backgroundColor: '#fff',
+        borderWidth: 2,
+        borderColor: Colors.secondary.deepMaroon,
+        alignItems: 'center',
+        gap: 8,
+    },
+    methodButtonActive: {
+        backgroundColor: Colors.secondary.deepMaroon,
+        borderColor: Colors.secondary.deepMaroon,
+    },
+    methodButtonText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: Colors.secondary.deepMaroon,
+        textAlign: 'center',
+    },
+    methodButtonTextActive: {
+        color: '#fff',
+    },
     inputWrapper: {
         width: '100%',
         backgroundColor: '#fff',

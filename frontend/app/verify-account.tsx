@@ -85,7 +85,7 @@ export default function VerifyAccountScreen() {
                             </View>
                             <Text style={s.heroTitle}>Get Your Verified Badge</Text>
                             <Text style={s.heroSubtitle}>
-                                Verify your email to earn a blue ✓ badge. It appears on your profile, in chats, and everywhere your name shows.
+                                Verify your email to get a blue ✓ badge. It appears on your profile, in chats, and everywhere your name shows.
                             </Text>
                         </View>
 

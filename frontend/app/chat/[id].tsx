@@ -368,14 +368,16 @@ export default function ChatScreen() {
 
         if (status === 'completed') {
             return (
-                <TouchableOpacity
-                    style={[da.btn, da.completedBtn]}
-                    activeOpacity={0.8}
-                    onPress={() => router.push(`/review/${id}?reviewee_id=${other?.id}&item_title=${encodeURIComponent(item?.title || '')}`)}
-                >
-                    <Ionicons name="star" size={16} color="#fff" />
-                    <Text style={da.btnText}>Leave a Review</Text>
-                </TouchableOpacity>
+                <View style={{ gap: 8 }}>
+                    <TouchableOpacity
+                        style={[da.btn, da.completedBtn]}
+                        activeOpacity={0.8}
+                        onPress={() => router.push(`/review/${id}?reviewee_id=${other?.id}&item_title=${encodeURIComponent(item?.title || '')}`)}
+                    >
+                        <Ionicons name="star" size={16} color="#fff" />
+                        <Text style={da.btnText}>Leave a Review</Text>
+                    </TouchableOpacity>
+                </View>
             );
         }
         if (status === 'cancelled') {
@@ -383,19 +385,34 @@ export default function ChatScreen() {
         }
         if (status === 'deal_agreed' && !myCompleted) {
             return (
-                <TouchableOpacity
-                    style={[da.btn, da.completeBtn]}
-                    onPress={() => Alert.alert('Confirm Swap', 'Confirm you have completed the physical exchange?', [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: "Yes, it's done!", onPress: () => handleDealAction('complete') },
-                    ])}
-                    disabled={actionLoading}
-                >
-                    {actionLoading ? <ActivityIndicator color="#fff" size="small" /> : <>
-                        <Ionicons name="checkmark-done" size={16} color="#fff" />
-                        <Text style={da.btnText}>Mark as Swapped</Text>
-                    </>}
-                </TouchableOpacity>
+                <View style={{ gap: 8 }}>
+                    <TouchableOpacity
+                        style={[da.btn, da.completeBtn]}
+                        onPress={() => Alert.alert('Confirm Swap', 'Confirm you have completed the physical exchange?', [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: "Yes, it's done!", onPress: () => handleDealAction('complete') },
+                        ])}
+                        disabled={actionLoading}
+                    >
+                        {actionLoading ? <ActivityIndicator color="#fff" size="small" /> : <>
+                            <Ionicons name="checkmark-done" size={16} color="#fff" />
+                            <Text style={da.btnText}>Mark as Swapped</Text>
+                        </>}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[da.btn, da.rejectBtn]}
+                        onPress={() => Alert.alert('Reject Deal?', 'This cannot be undone.', [
+                            { text: 'Keep', style: 'cancel' },
+                            { text: 'Reject', style: 'destructive', onPress: () => handleDealAction('cancel') },
+                        ])}
+                        disabled={actionLoading}
+                    >
+                        {actionLoading ? <ActivityIndicator color="#fff" size="small" /> : <>
+                            <Ionicons name="close" size={16} color="#fff" />
+                            <Text style={da.btnText}>Reject</Text>
+                        </>}
+                    </TouchableOpacity>
+                </View>
             );
         }
         if (status === 'deal_agreed' && myCompleted) {
@@ -403,16 +420,31 @@ export default function ChatScreen() {
         }
         if (!myAgreed) {
             return (
-                <TouchableOpacity
-                    style={[da.btn, da.agreeBtn]}
-                    onPress={() => handleDealAction('agree')}
-                    disabled={actionLoading}
-                >
-                    {actionLoading ? <ActivityIndicator color="#fff" size="small" /> : <>
-                        <Ionicons name="checkmark-outline" size={16} color="#fff" />
-                        <Text style={da.btnText}>Agree to Deal</Text>
-                    </>}
-                </TouchableOpacity>
+                <View style={{ gap: 8 }}>
+                    <TouchableOpacity
+                        style={[da.btn, da.agreeBtn]}
+                        onPress={() => handleDealAction('agree')}
+                        disabled={actionLoading}
+                    >
+                        {actionLoading ? <ActivityIndicator color="#fff" size="small" /> : <>
+                            <Ionicons name="checkmark-outline" size={16} color="#fff" />
+                            <Text style={da.btnText}>Agree to Deal</Text>
+                        </>}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[da.btn, da.rejectBtn]}
+                        onPress={() => Alert.alert('Reject Deal?', 'This cannot be undone.', [
+                            { text: 'Keep', style: 'cancel' },
+                            { text: 'Reject', style: 'destructive', onPress: () => handleDealAction('cancel') },
+                        ])}
+                        disabled={actionLoading}
+                    >
+                        {actionLoading ? <ActivityIndicator color="#fff" size="small" /> : <>
+                            <Ionicons name="close" size={16} color="#fff" />
+                            <Text style={da.btnText}>Reject</Text>
+                        </>}
+                    </TouchableOpacity>
+                </View>
             );
         }
         return <View style={[da.btn, da.waitingBtn]}><Text style={da.btnText}>Waiting for them to agree…</Text></View>;
@@ -465,15 +497,6 @@ export default function ChatScreen() {
                             </View>
                             {item?.title && <Text style={s.headerItem} numberOfLines={1}>re: {item.title}</Text>}
                         </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={s.cancelBtn}
-                        onPress={() => Alert.alert('Cancel deal?', 'This cannot be undone.', [
-                            { text: 'Keep', style: 'cancel' },
-                            { text: 'Cancel deal', style: 'destructive', onPress: () => handleDealAction('cancel') },
-                        ])}
-                    >
-                        <Ionicons name="close-circle-outline" size={22} color="#E74C3C" />
                     </TouchableOpacity>
                 </View>
 
@@ -704,6 +727,7 @@ const da = StyleSheet.create({
     completedBtn: { backgroundColor: Colors.primary.forestGreen },
     waitingBtn: { backgroundColor: '#CCC' },
     cancelledBtn: { backgroundColor: '#DDD' },
+    rejectBtn: { backgroundColor: '#E74C3C' },
 });
 
 // Wardrobe sheet styles

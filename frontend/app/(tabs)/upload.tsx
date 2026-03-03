@@ -17,6 +17,7 @@ const CATEGORY_OPTIONS = ['Tops', 'Bottoms', 'Shoes', 'Dresses', 'Outerwear', 'B
 const GENDER_OPTIONS = ['Men', 'Women', 'Unisex'];
 const CONDITION_OPTIONS = ['New with tags', 'New without tags', 'Good', 'Fair', 'Poor'];
 const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', '2XL', '28', '30', '32', '34', '36', '38', '40', '42'];
+const COLOR_OPTIONS = ['Black', 'White', 'Beige', 'Gray', 'Brown', 'Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Purple', 'Pink', 'Multi-color', 'Other'];
 
 // Photo slot definitions: first 3 are required, rest optional
 const PHOTO_SLOTS = [
@@ -168,33 +169,7 @@ export default function UploadScreen() {
                 publicUrls.push(url);
             }
 
-            // STEP 2: AI Verification (using brand-tag photo = index 1 if available)
-            setStep('verifying');
-            setStatusMsg('Verifying with AI…');
-
-            let aiScore = 0;
-            let aiVerified = false;
-            let aiReason = '';
-
-            try {
-                const verifyRes = await authenticatedFetch('/verify/item', {
-                    method: 'POST',
-                    body: JSON.stringify({ 
-                        brand: brand.trim(), 
-                        category: category || null, 
-                        image_urls: publicUrls 
-                    }),
-                });
-                aiScore = verifyRes.ai_score ?? 0;
-                aiVerified = verifyRes.verified ?? false;
-                aiReason = verifyRes.reason ?? '';
-            } catch (e: any) {
-                // AI failure is non-blocking — treat as pending_review
-                console.warn('AI verify failed:', e.message);
-                aiScore = 0;
-            }
-
-            // STEP 3: Create the item
+            // STEP 2: Create the item
             setStep('submitting');
             setStatusMsg('Publishing your item…');
 
@@ -210,25 +185,17 @@ export default function UploadScreen() {
                     size: size || null,
                     description: description.trim() || null,
                     images: publicUrls,
-                    ai_score: aiScore,
                 }),
             });
 
             setStep('idle');
 
-            // Show result alert
-            if (aiVerified) {
-                Alert.alert(
-                    '✅ Item Listed!',
-                    `Your item is live in the swap feed.\n\nAI Confidence: ${aiScore}%\n${aiReason}`,
-                    [{ text: 'View Profile', onPress: () => router.replace('/(tabs)/profile') }]
-                );
-            } else {
-                Alert.alert(
-                    '⏳ Under Review',
-                    `Your item has been submitted for manual review. We'll notify you once it's approved.\n\nAI Confidence: ${aiScore}%\n${aiReason || 'Low brand confidence — manual check required.'}`,
-                    [{ text: 'OK', onPress: () => router.replace('/(tabs)/profile') }]
-                );
+            // Show success alert
+            Alert.alert(
+                '✅ Your Item is Live!',
+                'Your item has been added to the swap feed.',
+                [{ text: 'View Wardrobe', onPress: () => router.replace('/(tabs)/profile') }]
+            );
             }
 
             // Reset form
@@ -341,18 +308,16 @@ export default function UploadScreen() {
                         {/* Size */}
                         <Text style={[st.label, { marginTop: 16 }]}>Size</Text>
                         <ChipSelector options={SIZE_OPTIONS} value={size} onSelect={setSize} />
-
                         {/* Color */}
                         <Text style={[st.label, { marginTop: 16 }]}>Colour</Text>
-                        <TextInput style={st.input} value={color} onChangeText={setColor}
-                            placeholder="e.g. Black, White, Beige" placeholderTextColor={Colors.neutrals.gray} />
+                        <ChipSelector options={COLOR_OPTIONS} value={color} onSelect={setColor} />
 
                         {/* Description */}
                         <Text style={st.label}>Description</Text>
                         <TextInput
                             style={[st.input, st.inputMultiline]}
                             value={description} onChangeText={setDescription}
-                            placeholder="Tell buyers about this item — fabric, fit, any flaws…"
+                            placeholder="Tell others about this item — fabric, fit, any flaws…"
                             placeholderTextColor={Colors.neutrals.gray}
                             multiline numberOfLines={4} textAlignVertical="top"
                         />

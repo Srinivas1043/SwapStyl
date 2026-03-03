@@ -127,7 +127,6 @@ export default function SettingsScreen() {
         {
             title: `🌿 ${i18n.t('sustainability')}`,
             items: [
-                { label: i18n.t('ecoPoints'), value: 'Earn 10 pts per swap', toggle: false },
                 { label: i18n.t('carbonSaved'), value: 'Track via your swaps', toggle: false },
                 { label: i18n.t('mission'), arrow: true, toggle: false, onPress: () => Alert.alert('Our Mission', 'SwapStyl helps reduce fashion waste by connecting people who want to swap clothes — giving every garment a second life.') },
             ],

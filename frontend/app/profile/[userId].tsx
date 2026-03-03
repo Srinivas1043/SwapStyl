@@ -142,10 +142,7 @@ export default function MatchedUserProfileScreen() {
                             <Text style={styles.statValue}>{profile?.items_swapped || 0}</Text>
                             <Text style={styles.statLabel}>Swaps</Text>
                         </View>
-                        <View style={styles.statBox}>
-                            <Text style={styles.statValue}>{profile?.eco_points || 0}</Text>
-                            <Text style={styles.statLabel}>🌿 Points</Text>
-                        </View>
+                        
                         <View style={styles.statBox}>
                             <Text style={styles.statValue}>{profile?.rating?.toFixed(1) || 'N/A'}</Text>
                             <Text style={styles.statLabel}>Rating</Text>

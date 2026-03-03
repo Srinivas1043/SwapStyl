@@ -30,8 +30,11 @@ const STEPS = [
             { label: 'Full Name *', key: 'full_name', placeholder: 'e.g. Jane Doe', icon: 'person-outline' },
             { label: 'Username', key: 'username', placeholder: 'e.g. janedoe123', icon: 'at-outline' },
             { label: 'Bio', key: 'bio', placeholder: 'Tell us a bit about your style...', multiline: true, icon: 'create-outline' },
-            { label: 'Location', key: 'location', placeholder: 'e.g. Amsterdam, Netherlands', icon: 'location-outline' },
             { label: 'Phone (optional)', key: 'phone', placeholder: 'e.g. +1 234 567 8900', icon: 'call-outline', keyboardType: 'phone-pad' },
+            { label: 'City / Region', key: 'location', placeholder: 'e.g. Amsterdam', icon: 'location-outline' },
+            { label: 'Street Address', key: 'street_address', placeholder: 'e.g. Main Street 123', icon: 'home-outline' },
+            { label: 'Postal Code', key: 'postal_code', placeholder: 'e.g. 1012AB', icon: 'mail-outline' },
+            { label: 'Country', key: 'country', placeholder: 'e.g. Netherlands', icon: 'globe-outline' },
         ]
     },
     {
@@ -43,7 +46,6 @@ const STEPS = [
         icon: 'heart-outline',
         options: [
             { label: "Swap Clothes", icon: "repeat-outline" },
-            { label: "Sell Clothes", icon: "cash-outline" },
             { label: "Discover Styles", icon: "compass-outline" },
             { label: "Build Wardrobe", icon: "shirt-outline" },
             { label: "Just Browsing", icon: "eye-outline" }
@@ -192,6 +194,9 @@ export default function PreferencesScreen() {
                 username: profileData.username?.trim() || null,
                 bio: profileData.bio?.trim() || null,
                 location: profileData.location?.trim() || null,
+                street_address: profileData.street_address?.trim() || null,
+                postal_code: profileData.postal_code?.trim() || null,
+                country: profileData.country?.trim() || null,
                 phone: profileData.phone?.trim() || null,
                 gender: preferences.gender || null,
                 preferences: preferences,
