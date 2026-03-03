@@ -121,17 +121,14 @@ export default function MatchedUserProfileScreen() {
                             }}
                             style={styles.avatar}
                         />
-                    </View>
-
-                    <Text style={styles.name}>{profile?.full_name || 'User'}</Text>
-                    {profile?.is_verified && (
-                        <View style={styles.verifiedRow}>
+                        {profile?.is_verified && (
                             <View style={styles.verifiedBadge}>
                                 <Ionicons name="checkmark" size={11} color="#fff" />
                             </View>
-                            <Text style={styles.verifiedText}>Verified</Text>
-                        </View>
-                    )}
+                        )}
+                    </View>
+
+                    <Text style={styles.name}>{profile?.full_name || 'User'}</Text>
                     {profile?.location && (
                         <View style={styles.locationRow}>
                             <Ionicons name="location-outline" size={14} color={Colors.neutrals.gray} />
@@ -319,13 +316,15 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        overflow: 'hidden',
+        overflow: 'visible',          /* needed so badge shows outside */
+        position: 'relative',
         marginBottom: 12,
         backgroundColor: '#E0DDD8',
     },
     avatar: {
         width: '100%',
         height: '100%',
+        borderRadius: 50,             /* clip the image while overflow:visible shows badge */
     },
     name: {
         fontSize: 24,
@@ -496,12 +495,17 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     verifiedBadge: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
         backgroundColor: '#1DA1F2',
         alignItems: 'center',
         justifyContent: 'center',
+        borderWidth: 2.5,
+        borderColor: '#fff',
     },
     verifiedText: {
         fontSize: 13,

@@ -151,6 +151,11 @@ export default function ProfileScreen() {
                             }}
                             style={styles.avatar}
                         />
+                        {profile?.is_verified && (
+                            <View style={styles.verifiedBadge}>
+                                <Ionicons name="checkmark" size={11} color="#fff" />
+                            </View>
+                        )}
                     </View>
 
                     <View style={styles.headerInfo}>
@@ -158,11 +163,6 @@ export default function ProfileScreen() {
                             <Text style={styles.name}>
                                 {profile?.full_name || 'Your Name'}
                             </Text>
-                            {profile?.is_verified && (
-                                <View style={styles.verifiedBadge}>
-                                    <Ionicons name="checkmark" size={11} color="#fff" />
-                                </View>
-                            )}
                         </View>
                         {profile?.username ? (
                             <Text style={styles.username}>@{profile.username}</Text>
@@ -261,6 +261,7 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     avatarWrapper: {
+        position: 'relative',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.15,
@@ -493,11 +494,16 @@ const styles = StyleSheet.create({
 
     // ── Verified Badge ────────────────────────────────────────────
     verifiedBadge: {
-        width: 18,
-        height: 18,
-        borderRadius: 9,
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 22,
+        height: 22,
+        borderRadius: 11,
         backgroundColor: '#1DA1F2',
         alignItems: 'center',
         justifyContent: 'center',
+        borderWidth: 2.5,
+        borderColor: '#fff',
     },
 });
