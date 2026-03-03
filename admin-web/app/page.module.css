@@ -120,3 +120,16 @@
   text-decoration: underline;
 }
 
+
+/* ── Forgot password additions ── */
+.stepBar { display: flex; gap: 1rem; justify-content: center; margin-bottom: 1.5rem; }
+.step { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700; color: #aaa; transition: all 0.2s; }
+.stepActive { border-color: #4F7942; color: #4F7942; }
+.stepDone { background: #4F7942; border-color: #4F7942; color: white; }
+.otpInput { font-size: 1.6rem; letter-spacing: 0.3rem; text-align: center; padding: 0.75rem; font-weight: 700; }
+.resendBtn { background: none; border: none; color: #4F7942; font-size: 0.88rem; cursor: pointer; text-decoration: underline; margin-top: 0.25rem; }
+.resendBtn:disabled { color: #aaa; cursor: not-allowed; text-decoration: none; }
+.forgotBtn { background: none; border: none; color: #999; font-size: 0.85rem; cursor: pointer; text-align: right; padding: 0; text-decoration: underline; margin-top: -0.25rem; }
+.forgotBtn:hover { color: #4F7942; }
+.backLink { background: none; border: none; color: #666; font-size: 0.88rem; cursor: pointer; text-decoration: underline; }
+.hint { font-size: 0.85rem; color: #666; margin: 0 0 0.25rem; line-height: 1.5; }
