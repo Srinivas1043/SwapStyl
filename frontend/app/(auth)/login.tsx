@@ -130,6 +130,15 @@ export default function Login() {
         }
     }
 
+    // Safe JSON parser — handles HTML error pages from Render
+    async function safeJson(res: Response) {
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+            throw new Error(`Server error (${res.status}). Make sure the backend is deployed and try again.`);
+        }
+        return res.json();
+    }
+
     // ── Forgot password: Phase 1 — send OTP
     async function sendPasswordResetOtp() {
         if (!resetEmail.trim()) {
@@ -144,7 +153,7 @@ export default function Login() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: resetEmail.trim() }),
             });
-            const data = await res.json();
+            const data = await safeJson(res);
             if (data?.success) {
                 setResetOtp('');
                 setResetPhase('otp');
@@ -189,7 +198,7 @@ export default function Login() {
                     new_password: newPassword,
                 }),
             });
-            const data = await res.json();
+            const data = await safeJson(res);
             if (data?.success) {
                 setResetSuccess(true);
                 Alert.alert(
