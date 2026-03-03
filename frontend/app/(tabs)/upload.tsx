@@ -92,12 +92,12 @@ export default function UploadScreen() {
             const uri = result.assets[0].uri;
             console.log(`Image selected at index ${index}:`, uri);
             console.log(`Asset details:`, result.assets[0]);
-            
+
             if (!uri) {
                 console.error('No URI in asset!');
                 return;
             }
-            
+
             const newPhotos = [...photos];
             newPhotos[index] = uri;
             setPhotos(newPhotos);
@@ -105,7 +105,7 @@ export default function UploadScreen() {
             const newLoading = [...loadingImages];
             newLoading[index] = true;
             setLoadingImages(newLoading);
-            
+
             console.log(`Updated photos:`, newPhotos[index]);
         }
     };
@@ -114,7 +114,7 @@ export default function UploadScreen() {
         const newPhotos = [...photos];
         newPhotos[index] = null;
         setPhotos(newPhotos);
-        
+
         const newLoading = [...loadingImages];
         newLoading[index] = false;
         setLoadingImages(newLoading);
@@ -196,7 +196,6 @@ export default function UploadScreen() {
                 'Your item has been added to the swap feed.',
                 [{ text: 'View Wardrobe', onPress: () => router.replace('/(tabs)/profile') }]
             );
-            }
 
             // Reset form
             setPhotos(Array(PHOTO_SLOTS.length).fill(null));
@@ -228,10 +227,10 @@ export default function UploadScreen() {
                                 <View key={`photo-${i}-${photos[i]}`} style={st.photoSlotWrapper}>
                                     {photos[i] ? (
                                         <TouchableOpacity style={st.photoSlot} onPress={() => pickPhoto(i)} activeOpacity={0.9}>
-                                            <Image 
+                                            <Image
                                                 key={`image-${i}-${photos[i]}`}
-                                                source={{ uri: photos[i] }} 
-                                                style={[StyleSheet.absoluteFill, { borderRadius: 12 }]} 
+                                                source={{ uri: photos[i] }}
+                                                style={[StyleSheet.absoluteFill, { borderRadius: 12 }]}
                                                 resizeMode="cover"
                                                 onLoadStart={() => {
                                                     console.log(`Image ${i} loading started`);
