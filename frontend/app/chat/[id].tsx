@@ -381,11 +381,16 @@ export default function ChatScreen() {
             );
         }
         if (status === 'cancelled') {
-            return <View style={[da.btn, da.cancelledBtn]}><Text style={da.btnText}>❌ Cancelled</Text></View>;
+            return (
+                <View style={[da.btn, da.cancelledBtn]}>
+                    <Ionicons name="ban" size={16} color="#666" />
+                    <Text style={da.cancelledBtnText}>Deal Cancelled</Text>
+                </View>
+            );
         }
         if (status === 'deal_agreed' && !myCompleted) {
             return (
-                <View style={{ gap: 8 }}>
+                <View style={da.actionsContainer}>
                     <TouchableOpacity
                         style={[da.btn, da.completeBtn]}
                         onPress={() => Alert.alert('Confirm Swap', 'Confirm you have completed the physical exchange?', [
@@ -400,54 +405,54 @@ export default function ChatScreen() {
                         </>}
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[da.btn, da.rejectBtn]}
-                        onPress={() => Alert.alert('Reject Deal?', 'This cannot be undone.', [
-                            { text: 'Keep', style: 'cancel' },
-                            { text: 'Reject', style: 'destructive', onPress: () => handleDealAction('cancel') },
+                        style={[da.btn, da.cancelBtn]}
+                        onPress={() => Alert.alert('Cancel Deal?', 'Are you sure you want to cancel this deal? This action cannot be undone.', [
+                            { text: 'Keep Deal', style: 'cancel' },
+                            { text: 'Cancel Deal', style: 'destructive', onPress: () => handleDealAction('cancel') },
                         ])}
                         disabled={actionLoading}
                     >
                         {actionLoading ? <ActivityIndicator color="#fff" size="small" /> : <>
-                            <Ionicons name="close" size={16} color="#fff" />
-                            <Text style={da.btnText}>Reject</Text>
+                            <Ionicons name="close-circle" size={16} color="#fff" />
+                            <Text style={da.btnText}>Cancel Deal</Text>
                         </>}
                     </TouchableOpacity>
                 </View>
             );
         }
         if (status === 'deal_agreed' && myCompleted) {
-            return <View style={[da.btn, da.waitingBtn]}><Text style={da.btnText}>Waiting for them to confirm…</Text></View>;
+            return <View style={[da.btn, da.waitingBtn]}><Text style={da.btnTextWaiting}>⏳ Waiting for them to confirm swap…</Text></View>;
         }
         if (!myAgreed) {
             return (
-                <View style={{ gap: 8 }}>
+                <View style={da.actionsContainer}>
                     <TouchableOpacity
                         style={[da.btn, da.agreeBtn]}
                         onPress={() => handleDealAction('agree')}
                         disabled={actionLoading}
                     >
                         {actionLoading ? <ActivityIndicator color="#fff" size="small" /> : <>
-                            <Ionicons name="checkmark-outline" size={16} color="#fff" />
+                            <Ionicons name="checkmark-circle" size={16} color="#fff" />
                             <Text style={da.btnText}>Agree to Deal</Text>
                         </>}
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[da.btn, da.rejectBtn]}
-                        onPress={() => Alert.alert('Reject Deal?', 'This cannot be undone.', [
-                            { text: 'Keep', style: 'cancel' },
-                            { text: 'Reject', style: 'destructive', onPress: () => handleDealAction('cancel') },
+                        style={[da.btn, da.cancelBtn]}
+                        onPress={() => Alert.alert('Cancel Deal?', 'Are you sure you want to cancel this deal? This action cannot be undone.', [
+                            { text: 'Keep Deal', style: 'cancel' },
+                            { text: 'Cancel Deal', style: 'destructive', onPress: () => handleDealAction('cancel') },
                         ])}
                         disabled={actionLoading}
                     >
                         {actionLoading ? <ActivityIndicator color="#fff" size="small" /> : <>
-                            <Ionicons name="close" size={16} color="#fff" />
-                            <Text style={da.btnText}>Reject</Text>
+                            <Ionicons name="close-circle" size={16} color="#fff" />
+                            <Text style={da.btnText}>Cancel Deal</Text>
                         </>}
                     </TouchableOpacity>
                 </View>
             );
         }
-        return <View style={[da.btn, da.waitingBtn]}><Text style={da.btnText}>Waiting for them to agree…</Text></View>;
+        return <View style={[da.btn, da.waitingBtn]}><Text style={da.btnTextWaiting}>⏳ Waiting for them to agree…</Text></View>;
     }
 
     if (loading) {
@@ -596,12 +601,16 @@ const s = StyleSheet.create({
 
     header: {
         flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: 12, paddingVertical: 10,
+        paddingHorizontal: 12, paddingVertical: 12,
         backgroundColor: '#fff',
         borderBottomWidth: 1, borderBottomColor: '#EDEDEA',
-        gap: 8,
+        gap: 12,
     },
-    backBtn: { padding: 4 },
+    backBtn: { 
+        padding: 6,
+        borderRadius: 8,
+        backgroundColor: '#F5F5F5',
+    },
     headerInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
     headerAvatar: { width: 38, height: 38, borderRadius: 19 },
     headerAvatarFallback: { backgroundColor: Colors.secondary.deepMaroon, alignItems: 'center', justifyContent: 'center' },
@@ -620,19 +629,19 @@ const s = StyleSheet.create({
 
     dealBar: {
         backgroundColor: '#fff', paddingHorizontal: 16,
-        paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#EDEDEA', gap: 8,
+        paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#EDEDEA', gap: 12,
     },
     itemPill: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
-        backgroundColor: '#F0EDE8', borderRadius: 10,
-        paddingHorizontal: 10, paddingVertical: 6, alignSelf: 'flex-start',
+        backgroundColor: '#F0EDE8', borderRadius: 12,
+        paddingHorizontal: 12, paddingVertical: 8, alignSelf: 'flex-start',
     },
     itemPillImg: { width: 24, height: 24, borderRadius: 5 },
     itemPillText: { fontSize: 12, fontWeight: '600', color: Colors.secondary.deepMaroon, maxWidth: SCREEN_W - 140 },
 
     productsBar: {
         backgroundColor: '#fff', paddingHorizontal: 12,
-        paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#EDEDEA',
+        paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#EDEDEA',
     },
     productsTitle: { fontSize: 13, fontWeight: '700', color: Colors.secondary.deepMaroon, marginBottom: 8 },
     productsList: { flex: undefined },
@@ -644,14 +653,18 @@ const s = StyleSheet.create({
     productTitle: { fontSize: 11, fontWeight: '600', color: Colors.secondary.deepMaroon, paddingHorizontal: 6, paddingTop: 6 },
     productMeta: { fontSize: 9, color: '#888', paddingHorizontal: 6, paddingBottom: 6 },
 
-    messageList: { paddingHorizontal: 12, paddingVertical: 12, gap: 4 },
+    messageList: { paddingHorizontal: 12, paddingVertical: 14, gap: 6 },
 
     inputBar: {
         flexDirection: 'row', alignItems: 'flex-end',
-        paddingHorizontal: 12, paddingVertical: 8,
-        backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#EDEDEA', gap: 8,
+        paddingHorizontal: 12, paddingVertical: 10,
+        backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#EDEDEA', gap: 10,
     },
-    wardrobeBtn: { padding: 8 },
+    wardrobeBtn: { 
+        padding: 8,
+        borderRadius: 10,
+        backgroundColor: '#F5F5F5',
+    },
     input: {
         flex: 1, backgroundColor: '#F5F3EF', borderRadius: 20,
         paddingHorizontal: 14, paddingVertical: 10,
@@ -717,17 +730,41 @@ const b = StyleSheet.create({
 
 // Deal action button styles
 const da = StyleSheet.create({
+    actionsContainer: {
+        gap: 10,
+    },
     btn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: 6, paddingVertical: 10, borderRadius: 12,
+        gap: 8, paddingVertical: 12, borderRadius: 14,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    btnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+    btnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+    btnTextWaiting: { color: '#666', fontWeight: '600', fontSize: 14 },
     agreeBtn: { backgroundColor: Colors.secondary.deepMaroon },
     completeBtn: { backgroundColor: Colors.primary.forestGreen },
     completedBtn: { backgroundColor: Colors.primary.forestGreen },
-    waitingBtn: { backgroundColor: '#CCC' },
-    cancelledBtn: { backgroundColor: '#DDD' },
-    rejectBtn: { backgroundColor: '#E74C3C' },
+    waitingBtn: { 
+        backgroundColor: '#F0F0F0',
+        shadowOpacity: 0.05,
+    },
+    cancelledBtn: { 
+        backgroundColor: '#F5F5F5',
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        shadowOpacity: 0.03,
+    },
+    cancelledBtnText: { 
+        color: '#666', 
+        fontWeight: '600', 
+        fontSize: 14 
+    },
+    cancelBtn: { 
+        backgroundColor: '#DC3545',
+    },
 });
 
 // Wardrobe sheet styles
